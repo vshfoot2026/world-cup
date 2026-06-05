@@ -584,10 +584,20 @@ nav {
 }
 
 .match-meta {
-  font-size: 11px;
-  color: var(--white30);
-  margin-top: 5px;
-  letter-spacing: 0.3px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white80);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+
+.match-city {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .match-countdown {
@@ -1182,10 +1192,7 @@ nav {
   <div class="login-bg-gradient"></div>
   <div class="login-box">
     <div class="login-header">
-      <img class="login-vsh-logo"
-           src="https://valleesudhabitat.fr/wp-content/uploads/2022/04/new-logo4b-1.png"
-           alt="Vallée Sud Habitat"
-           onerror="this.outerHTML='<div class=\'login-vsh-text\'>VALLÉE SUD HABITAT</div>'">
+      <div class="login-vsh-text">VALLÉE SUD HABITAT</div>
       <div class="login-divider"></div>
       <div class="login-title">VSH PRONO 2026</div>
       <div class="login-subtitle">Coupe du Monde FIFA™ · Concours interne</div>
@@ -1213,10 +1220,7 @@ nav {
 
   <nav>
     <div class="nav-brand">
-      <img class="nav-logo-img"
-           src="https://valleesudhabitat.fr/wp-content/uploads/2022/04/new-logo4b-sticky.png"
-           alt="VSH"
-           onerror="this.outerHTML='<div class=\'nav-vsh-text\'>VSH</div>'">
+      <div class="nav-vsh-text">VSH</div>
       <div class="nav-sep"></div>
       <div>
         <div class="nav-app-title">VSH PRONO 2026</div>
@@ -1701,8 +1705,9 @@ function makeCard(m,myPronos,results){
     <div class="match-middle">
       ${played
         ? `<div class="match-result-score">${result.h}&nbsp;—&nbsp;${result.a}</div>`
-        : `<div class="match-vs">VS</div>`}
-      <div class="match-meta">${m.d} · ${m.v}</div>
+        : ''}
+      <div class="match-meta">${m.d}</div>
+      <div class="match-city">${m.v}</div>
       <div class="match-countdown" id="cd_${m.id}"></div>
       <div class="prono-action" style="margin-top:10px;justify-content:center;">${makeAction(m,prono,result,pts,locked)}</div>
     </div>
