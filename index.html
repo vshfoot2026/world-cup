@@ -408,34 +408,113 @@ nav {
   text-transform: uppercase;
 }
 
-.player-kpis {
+.banner-stats {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   flex-shrink: 0;
+  min-width: 260px;
 }
 
-.kpi-box {
+.banner-stat-block {
   background: rgba(0,0,0,0.2);
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
-  padding: 14px 20px;
-  text-align: center;
-  min-width: 80px;
+  padding: 12px 16px;
 }
 
-.kpi-val {
+.banner-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.bstat {
+  flex: 1;
+  text-align: center;
+}
+
+.bstat-val {
   font-family: var(--font-head);
-  font-size: 30px;
+  font-size: 26px;
   color: var(--white);
   line-height: 1;
 }
 
-.kpi-lbl {
-  font-size: 10px;
-  color: rgba(255,255,255,0.5);
+.bstat-lbl {
+  font-size: 9px;
+  color: rgba(255,255,255,0.45);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-top: 4px;
+  margin-top: 3px;
+}
+
+.bstat-sep {
+  width: 1px;
+  height: 30px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+.banner-mini-lb {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-lb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 2px 0;
+  border-radius: 6px;
+}
+
+.mini-lb-row.is-me {
+  background: rgba(0,182,188,0.12);
+  padding: 2px 6px;
+  margin: 0 -6px;
+}
+
+.mini-lb-rank {
+  font-family: var(--font-head);
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.3);
+}
+.mini-lb-rank.r1 { color: var(--gold); }
+.mini-lb-rank.r2 { color: var(--silver); }
+.mini-lb-rank.r3 { color: var(--bronze); }
+
+.mini-lb-name {
+  flex: 1;
+  font-weight: 600;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mini-lb-row.is-me .mini-lb-name { color: var(--white); }
+
+.mini-lb-pts {
+  font-family: var(--font-head);
+  font-size: 15px;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.mini-lb-dots {
+  text-align: center;
+  color: rgba(255,255,255,0.2);
+  font-size: 11px;
+  padding: 1px 0;
 }
 
 /* ════════════ BARÈME ════════════ */
@@ -1177,7 +1256,7 @@ nav {
 /* ════════════ RESPONSIVE ════════════ */
 @media (max-width: 900px) {
   .match-card { grid-template-columns: 1fr; gap: 10px; }
-  .player-kpis { display: none; }
+  .banner-stats { display: none; }
   .admin-grid { grid-template-columns: 1fr; }
   nav { padding: 0 16px; gap: 8px; }
   .nav-tab { padding: 7px 12px; font-size: 12px; }
@@ -1255,10 +1334,17 @@ nav {
             </div>
           </div>
         </div>
-        <div class="player-kpis">
-          <div class="kpi-box"><div class="kpi-val" id="stat-pts">0</div><div class="kpi-lbl">Points</div></div>
-          <div class="kpi-box"><div class="kpi-val" id="stat-pronos">0</div><div class="kpi-lbl">Pronos</div></div>
-          <div class="kpi-box"><div class="kpi-val" id="stat-rank">—</div><div class="kpi-lbl">Rang</div></div>
+        <div class="banner-stats">
+          <div class="banner-stat-block">
+            <div class="banner-stat-row">
+              <div class="bstat"><div class="bstat-val" id="stat-pts">0</div><div class="bstat-lbl">Points</div></div>
+              <div class="bstat-sep"></div>
+              <div class="bstat"><div class="bstat-val" id="stat-pronos">0/72</div><div class="bstat-lbl">Pronos</div></div>
+              <div class="bstat-sep"></div>
+              <div class="bstat"><div class="bstat-val" id="stat-rank">—</div><div class="bstat-lbl">Classement</div></div>
+            </div>
+          </div>
+          <div class="banner-mini-lb" id="banner-mini-lb"></div>
         </div>
       </div>
 
@@ -1359,161 +1445,161 @@ const ADMIN_NOM    = "admin";
 const MATCHES = [
   // ── GROUPE A : Mexique, Afrique du Sud, Corée du Sud, Rép. Tchèque ──
   // 11/06 : Mexique-AfrSud 21h00 Paris (19h GMT), CorSud-Tchèque 00h00 12/06 (22h GMT)
-  { id:'A1',  g:'A', ph:'Groupe', d:'11/06 · 21h00', h:'Mexique',         a:'Afrique du Sud',    fh:'🇲🇽', fa:'🇿🇦', v:'Mexico' },
-  { id:'A2',  g:'A', ph:'Groupe', d:'12/06 · 00h00', h:'Corée du Sud',    a:'Rép. Tchèque',      fh:'🇰🇷', fa:'🇨🇿', v:'Guadalajara' },
+  { id:'A1',  g:'A', ph:'Groupe', d:'11/06 · 21h00', h:'Mexique',         a:'Afrique du Sud',    fh:'mx', fa:'za', v:'Mexico' },
+  { id:'A2',  g:'A', ph:'Groupe', d:'12/06 · 00h00', h:'Corée du Sud',    a:'Rép. Tchèque',      fh:'kr', fa:'cz', v:'Guadalajara' },
   // 18/06 : Tchèque-AfrSud 19h00 (17h GMT), Mexique-CorSud 03h00 19/06 (01h GMT)
-  { id:'A3',  g:'A', ph:'Groupe', d:'18/06 · 19h00', h:'Rép. Tchèque',    a:'Afrique du Sud',    fh:'🇨🇿', fa:'🇿🇦', v:'Atlanta' },
-  { id:'A4',  g:'A', ph:'Groupe', d:'19/06 · 03h00', h:'Mexique',         a:'Corée du Sud',      fh:'🇲🇽', fa:'🇰🇷', v:'Guadalajara' },
+  { id:'A3',  g:'A', ph:'Groupe', d:'18/06 · 19h00', h:'Rép. Tchèque',    a:'Afrique du Sud',    fh:'cz', fa:'za', v:'Atlanta' },
+  { id:'A4',  g:'A', ph:'Groupe', d:'19/06 · 03h00', h:'Mexique',         a:'Corée du Sud',      fh:'mx', fa:'kr', v:'Guadalajara' },
   // 24/06 simultanés : Tchèque-Mexique 03h00 25/06 (01h GMT), AfrSud-CorSud 03h00 25/06 (01h GMT)
-  { id:'A5',  g:'A', ph:'Groupe', d:'25/06 · 03h00', h:'Rép. Tchèque',    a:'Mexique',           fh:'🇨🇿', fa:'🇲🇽', v:'Mexico' },
-  { id:'A6',  g:'A', ph:'Groupe', d:'25/06 · 03h00', h:'Afrique du Sud',  a:'Corée du Sud',      fh:'🇿🇦', fa:'🇰🇷', v:'Guadalupe' },
+  { id:'A5',  g:'A', ph:'Groupe', d:'25/06 · 03h00', h:'Rép. Tchèque',    a:'Mexique',           fh:'cz', fa:'mx', v:'Mexico' },
+  { id:'A6',  g:'A', ph:'Groupe', d:'25/06 · 03h00', h:'Afrique du Sud',  a:'Corée du Sud',      fh:'za', fa:'kr', v:'Guadalupe' },
   // ── GROUPE B : Canada, Bosnie-Herzégovine, Qatar, Suisse ──
   // 12/06 : Canada-Bosnie 21h00 (19h GMT) ; 13/06 : Qatar-Suisse 21h00 (19h GMT)
-  { id:'B1',  g:'B', ph:'Groupe', d:'12/06 · 21h00', h:'Canada',          a:'Bosnie-Herzégovine',fh:'🇨🇦', fa:'🇧🇦', v:'Toronto' },
-  { id:'B2',  g:'B', ph:'Groupe', d:'13/06 · 21h00', h:'Qatar',           a:'Suisse',            fh:'🇶🇦', fa:'🇨🇭', v:'San Francisco' },
+  { id:'B1',  g:'B', ph:'Groupe', d:'12/06 · 21h00', h:'Canada',          a:'Bosnie-Herzégovine',fh:'ca', fa:'ba', v:'Toronto' },
+  { id:'B2',  g:'B', ph:'Groupe', d:'13/06 · 21h00', h:'Qatar',           a:'Suisse',            fh:'qa', fa:'ch', v:'San Francisco' },
   // 18/06 : Suisse-Bosnie 01h00 19/06 (23h GMT) ; 19/06 : Canada-Qatar 04h00 (02h GMT)
-  { id:'B3',  g:'B', ph:'Groupe', d:'19/06 · 01h00', h:'Suisse',          a:'Bosnie-Herzégovine',fh:'🇨🇭', fa:'🇧🇦', v:'Los Angeles' },
-  { id:'B4',  g:'B', ph:'Groupe', d:'19/06 · 04h00', h:'Canada',          a:'Qatar',             fh:'🇨🇦', fa:'🇶🇦', v:'Vancouver' },
+  { id:'B3',  g:'B', ph:'Groupe', d:'19/06 · 01h00', h:'Suisse',          a:'Bosnie-Herzégovine',fh:'ch', fa:'ba', v:'Los Angeles' },
+  { id:'B4',  g:'B', ph:'Groupe', d:'19/06 · 04h00', h:'Canada',          a:'Qatar',             fh:'ca', fa:'qa', v:'Vancouver' },
   // 24/06 simultanés : Suisse-Canada 01h00 25/06 (23h GMT), Bosnie-Qatar 01h00 25/06 (23h GMT)
-  { id:'B5',  g:'B', ph:'Groupe', d:'25/06 · 01h00', h:'Suisse',          a:'Canada',            fh:'🇨🇭', fa:'🇨🇦', v:'Vancouver' },
-  { id:'B6',  g:'B', ph:'Groupe', d:'25/06 · 01h00', h:'Bosnie-Herzégovine',a:'Qatar',           fh:'🇧🇦', fa:'🇶🇦', v:'Seattle' },
+  { id:'B5',  g:'B', ph:'Groupe', d:'25/06 · 01h00', h:'Suisse',          a:'Canada',            fh:'ch', fa:'ca', v:'Vancouver' },
+  { id:'B6',  g:'B', ph:'Groupe', d:'25/06 · 01h00', h:'Bosnie-Herzégovine',a:'Qatar',           fh:'ba', fa:'qa', v:'Seattle' },
   // ── GROUPE C : Brésil, Maroc, Haïti, Écosse ──
   // 13/06 : Brésil-Maroc 00h00 14/06 (22h GMT), Haïti-Écosse 03h00 14/06 (01h GMT)
-  { id:'C1',  g:'C', ph:'Groupe', d:'14/06 · 00h00', h:'Brésil',          a:'Maroc',             fh:'🇧🇷', fa:'🇲🇦', v:'New York/New Jersey' },
-  { id:'C2',  g:'C', ph:'Groupe', d:'14/06 · 03h00', h:'Haïti',           a:'Écosse',            fh:'🇭🇹', fa:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', v:'Boston' },
+  { id:'C1',  g:'C', ph:'Groupe', d:'14/06 · 00h00', h:'Brésil',          a:'Maroc',             fh:'br', fa:'ma', v:'New York/New Jersey' },
+  { id:'C2',  g:'C', ph:'Groupe', d:'14/06 · 03h00', h:'Haïti',           a:'Écosse',            fh:'ht', fa:'gb-sct', v:'Boston' },
   // 19/06 : Écosse-Maroc 01h00 20/06 (23h GMT) ; 20/06 : Brésil-Haïti 04h00 21/06 (02h GMT)
-  { id:'C4',  g:'C', ph:'Groupe', d:'20/06 · 01h00', h:'Écosse',          a:'Maroc',             fh:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', fa:'🇲🇦', v:'Boston' },
-  { id:'C3',  g:'C', ph:'Groupe', d:'21/06 · 04h00', h:'Brésil',          a:'Haïti',             fh:'🇧🇷', fa:'🇭🇹', v:'Philadelphie' },
+  { id:'C4',  g:'C', ph:'Groupe', d:'20/06 · 01h00', h:'Écosse',          a:'Maroc',             fh:'gb-sct', fa:'ma', v:'Boston' },
+  { id:'C3',  g:'C', ph:'Groupe', d:'21/06 · 04h00', h:'Brésil',          a:'Haïti',             fh:'br', fa:'ht', v:'Philadelphie' },
   // 24/06 simultanés : Écosse-Brésil 01h00 25/06 (23h GMT), Maroc-Haïti 01h00 25/06 (23h GMT)
-  { id:'C5',  g:'C', ph:'Groupe', d:'25/06 · 01h00', h:'Écosse',          a:'Brésil',            fh:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', fa:'🇧🇷', v:'Miami' },
-  { id:'C6',  g:'C', ph:'Groupe', d:'25/06 · 01h00', h:'Maroc',           a:'Haïti',             fh:'🇲🇦', fa:'🇭🇹', v:'Atlanta' },
+  { id:'C5',  g:'C', ph:'Groupe', d:'25/06 · 01h00', h:'Écosse',          a:'Brésil',            fh:'gb-sct', fa:'br', v:'Miami' },
+  { id:'C6',  g:'C', ph:'Groupe', d:'25/06 · 01h00', h:'Maroc',           a:'Haïti',             fh:'ma', fa:'ht', v:'Atlanta' },
   // ── GROUPE D : États-Unis, Paraguay, Australie, Turquie ──
   // 12/06 : USA-Paraguay 03h00 13/06 (01h GMT) ; 13/06 : Australie-Turquie 06h00 14/06 (04h GMT)
-  { id:'D1',  g:'D', ph:'Groupe', d:'13/06 · 03h00', h:'États-Unis',      a:'Paraguay',          fh:'🇺🇸', fa:'🇵🇾', v:'Los Angeles' },
-  { id:'D2',  g:'D', ph:'Groupe', d:'14/06 · 06h00', h:'Australie',       a:'Turquie',           fh:'🇦🇺', fa:'🇹🇷', v:'Vancouver' },
+  { id:'D1',  g:'D', ph:'Groupe', d:'13/06 · 03h00', h:'États-Unis',      a:'Paraguay',          fh:'us', fa:'py', v:'Los Angeles' },
+  { id:'D2',  g:'D', ph:'Groupe', d:'14/06 · 06h00', h:'Australie',       a:'Turquie',           fh:'au', fa:'tr', v:'Vancouver' },
   // 19/06 : USA-Australie 01h00 (23h GMT) ; Turquie-Paraguay 02h00 20/06 (00h GMT)
-  { id:'D4',  g:'D', ph:'Groupe', d:'20/06 · 01h00', h:'États-Unis',      a:'Australie',         fh:'🇺🇸', fa:'🇦🇺', v:'Seattle' },
-  { id:'D3',  g:'D', ph:'Groupe', d:'20/06 · 02h00', h:'Turquie',         a:'Paraguay',          fh:'🇹🇷', fa:'🇵🇾', v:'San Francisco' },
+  { id:'D4',  g:'D', ph:'Groupe', d:'20/06 · 01h00', h:'États-Unis',      a:'Australie',         fh:'us', fa:'au', v:'Seattle' },
+  { id:'D3',  g:'D', ph:'Groupe', d:'20/06 · 02h00', h:'Turquie',         a:'Paraguay',          fh:'tr', fa:'py', v:'San Francisco' },
   // 25/06 simultanés : Turquie-USA 08h00 26/06 (06h GMT), Paraguay-Australie 08h00 26/06 (06h GMT)
-  { id:'D6',  g:'D', ph:'Groupe', d:'26/06 · 08h00', h:'Turquie',         a:'États-Unis',        fh:'🇹🇷', fa:'🇺🇸', v:'Los Angeles' },
-  { id:'D5',  g:'D', ph:'Groupe', d:'26/06 · 08h00', h:'Paraguay',        a:'Australie',         fh:'🇵🇾', fa:'🇦🇺', v:'San Francisco' },
+  { id:'D6',  g:'D', ph:'Groupe', d:'26/06 · 08h00', h:'Turquie',         a:'États-Unis',        fh:'tr', fa:'us', v:'Los Angeles' },
+  { id:'D5',  g:'D', ph:'Groupe', d:'26/06 · 08h00', h:'Paraguay',        a:'Australie',         fh:'py', fa:'au', v:'San Francisco' },
   // ── GROUPE E : Allemagne, Curaçao, Côte d'Ivoire, Équateur ──
   // 14/06 : Allemagne-Curaçao 20h00 (18h GMT), CIV-Équateur 23h00 (21h GMT)
-  { id:'E1',  g:'E', ph:'Groupe', d:'14/06 · 20h00', h:'Allemagne',       a:'Curaçao',           fh:'🇩🇪', fa:'🇨🇼', v:'Houston' },
-  { id:'E2',  g:'E', ph:'Groupe', d:'15/06 · 01h00', h:"Côte d'Ivoire",   a:'Équateur',          fh:'🇨🇮', fa:'🇪🇨', v:'Philadelphie' },
+  { id:'E1',  g:'E', ph:'Groupe', d:'14/06 · 20h00', h:'Allemagne',       a:'Curaçao',           fh:'de', fa:'cw', v:'Houston' },
+  { id:'E2',  g:'E', ph:'Groupe', d:'15/06 · 01h00', h:"Côte d'Ivoire",   a:'Équateur',          fh:'ci', fa:'ec', v:'Philadelphie' },
   // 20/06 : Allemagne-CIV 23h00 (21h GMT) ; 21/06 : Curaçao-Équateur 06h00 22/06 (04h GMT)
-  { id:'E3',  g:'E', ph:'Groupe', d:'20/06 · 23h00', h:'Allemagne',       a:"Côte d'Ivoire",     fh:'🇩🇪', fa:'🇨🇮', v:'Toronto' },
-  { id:'E4',  g:'E', ph:'Groupe', d:'22/06 · 06h00', h:'Curaçao',         a:'Équateur',          fh:'🇨🇼', fa:'🇪🇨', v:'Kansas City' },
+  { id:'E3',  g:'E', ph:'Groupe', d:'20/06 · 23h00', h:'Allemagne',       a:"Côte d'Ivoire",     fh:'de', fa:'ci', v:'Toronto' },
+  { id:'E4',  g:'E', ph:'Groupe', d:'22/06 · 06h00', h:'Curaçao',         a:'Équateur',          fh:'cw', fa:'ec', v:'Kansas City' },
   // 25/06 simultanés : Équateur-Allemagne 23h00 (21h GMT), Curaçao-CIV 23h00 (21h GMT)
-  { id:'E5',  g:'E', ph:'Groupe', d:'25/06 · 23h00', h:'Équateur',        a:'Allemagne',         fh:'🇪🇨', fa:'🇩🇪', v:'New York/New Jersey' },
-  { id:'E6',  g:'E', ph:'Groupe', d:'25/06 · 23h00', h:"Côte d'Ivoire",   a:'Curaçao',           fh:'🇨🇮', fa:'🇨🇼', v:'Philadelphie' },
+  { id:'E5',  g:'E', ph:'Groupe', d:'25/06 · 23h00', h:'Équateur',        a:'Allemagne',         fh:'ec', fa:'de', v:'New York/New Jersey' },
+  { id:'E6',  g:'E', ph:'Groupe', d:'25/06 · 23h00', h:"Côte d'Ivoire",   a:'Curaçao',           fh:'ci', fa:'cw', v:'Philadelphie' },
   // ── GROUPE F : Pays-Bas, Japon, Suède, Tunisie ──
   // 14/06 : Pays-Bas-Japon 23h00 (21h GMT) ; Suède-Tunisie 00h00 15/06 (22h GMT mexique)
-  { id:'F1',  g:'F', ph:'Groupe', d:'14/06 · 23h00', h:'Pays-Bas',        a:'Japon',             fh:'🇳🇱', fa:'🇯🇵', v:'Dallas' },
-  { id:'F2',  g:'F', ph:'Groupe', d:'15/06 · 00h00', h:'Suède',           a:'Tunisie',           fh:'🇸🇪', fa:'🇹🇳', v:'Guadalupe' },
+  { id:'F1',  g:'F', ph:'Groupe', d:'14/06 · 23h00', h:'Pays-Bas',        a:'Japon',             fh:'nl', fa:'jp', v:'Dallas' },
+  { id:'F2',  g:'F', ph:'Groupe', d:'15/06 · 00h00', h:'Suède',           a:'Tunisie',           fh:'se', fa:'tn', v:'Guadalupe' },
   // 20/06 : Pays-Bas-Suède 21h00 (19h GMT), Tunisie-Japon 02h00 21/06 (00h GMT mexique)
-  { id:'F3',  g:'F', ph:'Groupe', d:'20/06 · 21h00', h:'Pays-Bas',        a:'Suède',             fh:'🇳🇱', fa:'🇸🇪', v:'Houston' },
-  { id:'F4',  g:'F', ph:'Groupe', d:'21/06 · 02h00', h:'Tunisie',         a:'Japon',             fh:'🇹🇳', fa:'🇯🇵', v:'Guadalupe' },
+  { id:'F3',  g:'F', ph:'Groupe', d:'20/06 · 21h00', h:'Pays-Bas',        a:'Suède',             fh:'nl', fa:'se', v:'Houston' },
+  { id:'F4',  g:'F', ph:'Groupe', d:'21/06 · 02h00', h:'Tunisie',         a:'Japon',             fh:'tn', fa:'jp', v:'Guadalupe' },
   // 25/06 simultanés : Japon-Suède 03h00 26/06 (01h GMT), Tunisie-Pays-Bas 03h00 26/06 (01h GMT)
-  { id:'F5',  g:'F', ph:'Groupe', d:'26/06 · 03h00', h:'Japon',           a:'Suède',             fh:'🇯🇵', fa:'🇸🇪', v:'Dallas' },
-  { id:'F6',  g:'F', ph:'Groupe', d:'26/06 · 03h00', h:'Tunisie',         a:'Pays-Bas',          fh:'🇹🇳', fa:'🇳🇱', v:'Kansas City' },
+  { id:'F5',  g:'F', ph:'Groupe', d:'26/06 · 03h00', h:'Japon',           a:'Suède',             fh:'jp', fa:'se', v:'Dallas' },
+  { id:'F6',  g:'F', ph:'Groupe', d:'26/06 · 03h00', h:'Tunisie',         a:'Pays-Bas',          fh:'tn', fa:'nl', v:'Kansas City' },
   // ── GROUPE G : Belgique, Égypte, Iran, Nouvelle-Zélande ──
   // 15/06 : Belgique-Égypte 01h00 16/06 (23h GMT), Iran-NZ 07h00 16/06 (05h GMT)
-  { id:'G1',  g:'G', ph:'Groupe', d:'16/06 · 01h00', h:'Belgique',        a:'Égypte',            fh:'🇧🇪', fa:'🇪🇬', v:'Vancouver' },
-  { id:'G2',  g:'G', ph:'Groupe', d:'16/06 · 07h00', h:'Iran',            a:'Nouvelle-Zélande',  fh:'🇮🇷', fa:'🇳🇿', v:'Los Angeles' },
+  { id:'G1',  g:'G', ph:'Groupe', d:'16/06 · 01h00', h:'Belgique',        a:'Égypte',            fh:'be', fa:'eg', v:'Vancouver' },
+  { id:'G2',  g:'G', ph:'Groupe', d:'16/06 · 07h00', h:'Iran',            a:'Nouvelle-Zélande',  fh:'ir', fa:'nz', v:'Los Angeles' },
   // 21/06 : Belgique-Iran 01h00 22/06 (23h GMT), NZ-Égypte 07h00 22/06 (05h GMT)
-  { id:'G3',  g:'G', ph:'Groupe', d:'22/06 · 01h00', h:'Belgique',        a:'Iran',              fh:'🇧🇪', fa:'🇮🇷', v:'Los Angeles' },
-  { id:'G4',  g:'G', ph:'Groupe', d:'22/06 · 07h00', h:'Nouvelle-Zélande',a:'Égypte',            fh:'🇳🇿', fa:'🇪🇬', v:'Vancouver' },
+  { id:'G3',  g:'G', ph:'Groupe', d:'22/06 · 01h00', h:'Belgique',        a:'Iran',              fh:'be', fa:'ir', v:'Los Angeles' },
+  { id:'G4',  g:'G', ph:'Groupe', d:'22/06 · 07h00', h:'Nouvelle-Zélande',a:'Égypte',            fh:'nz', fa:'eg', v:'Vancouver' },
   // 26/06 simultanés : Égypte-Iran 09h00 27/06 (07h GMT), NZ-Belgique 09h00 27/06 (07h GMT)
-  { id:'G5',  g:'G', ph:'Groupe', d:'27/06 · 09h00', h:'Égypte',          a:'Iran',              fh:'🇪🇬', fa:'🇮🇷', v:'Seattle' },
-  { id:'G6',  g:'G', ph:'Groupe', d:'27/06 · 09h00', h:'Nouvelle-Zélande',a:'Belgique',          fh:'🇳🇿', fa:'🇧🇪', v:'Vancouver' },
+  { id:'G5',  g:'G', ph:'Groupe', d:'27/06 · 09h00', h:'Égypte',          a:'Iran',              fh:'eg', fa:'ir', v:'Seattle' },
+  { id:'G6',  g:'G', ph:'Groupe', d:'27/06 · 09h00', h:'Nouvelle-Zélande',a:'Belgique',          fh:'nz', fa:'be', v:'Vancouver' },
   // ── GROUPE H : Espagne, Cap-Vert, Arabie Saoudite, Uruguay ──
   // 15/06 : Espagne-Cap-Vert 19h00 (17h GMT), ArabS-Uruguay 01h00 16/06 (23h GMT)
-  { id:'H1',  g:'H', ph:'Groupe', d:'15/06 · 19h00', h:'Espagne',         a:'Cap-Vert',          fh:'🇪🇸', fa:'🇨🇻', v:'Atlanta' },
-  { id:'H2',  g:'H', ph:'Groupe', d:'16/06 · 01h00', h:'Arabie Saoudite', a:'Uruguay',           fh:'🇸🇦', fa:'🇺🇾', v:'Miami' },
+  { id:'H1',  g:'H', ph:'Groupe', d:'15/06 · 19h00', h:'Espagne',         a:'Cap-Vert',          fh:'es', fa:'cv', v:'Atlanta' },
+  { id:'H2',  g:'H', ph:'Groupe', d:'16/06 · 01h00', h:'Arabie Saoudite', a:'Uruguay',           fh:'sa', fa:'uy', v:'Miami' },
   // 21/06 : Espagne-ArabS 19h00 (17h GMT), Uruguay-Cap-Vert 01h00 22/06 (23h GMT)
-  { id:'H3',  g:'H', ph:'Groupe', d:'21/06 · 19h00', h:'Espagne',         a:'Arabie Saoudite',   fh:'🇪🇸', fa:'🇸🇦', v:'Atlanta' },
-  { id:'H4',  g:'H', ph:'Groupe', d:'22/06 · 01h00', h:'Uruguay',         a:'Cap-Vert',          fh:'🇺🇾', fa:'🇨🇻', v:'Miami' },
+  { id:'H3',  g:'H', ph:'Groupe', d:'21/06 · 19h00', h:'Espagne',         a:'Arabie Saoudite',   fh:'es', fa:'sa', v:'Atlanta' },
+  { id:'H4',  g:'H', ph:'Groupe', d:'22/06 · 01h00', h:'Uruguay',         a:'Cap-Vert',          fh:'uy', fa:'cv', v:'Miami' },
   // 26/06 simultanés : Cap-Vert-ArabS 04h00 27/06 (02h GMT), Uruguay-Espagne 04h00 27/06 (02h GMT)
-  { id:'H5',  g:'H', ph:'Groupe', d:'27/06 · 04h00', h:'Cap-Vert',        a:'Arabie Saoudite',   fh:'🇨🇻', fa:'🇸🇦', v:'Houston' },
-  { id:'H6',  g:'H', ph:'Groupe', d:'27/06 · 04h00', h:'Uruguay',         a:'Espagne',           fh:'🇺🇾', fa:'🇪🇸', v:'Guadalajara' },
+  { id:'H5',  g:'H', ph:'Groupe', d:'27/06 · 04h00', h:'Cap-Vert',        a:'Arabie Saoudite',   fh:'cv', fa:'sa', v:'Houston' },
+  { id:'H6',  g:'H', ph:'Groupe', d:'27/06 · 04h00', h:'Uruguay',         a:'Espagne',           fh:'uy', fa:'es', v:'Guadalajara' },
   // ── GROUPE I : France, Sénégal, Irak, Norvège ──
   // 16/06 : France-Sénégal 22h00 (20h GMT), Irak-Norvège 01h00 17/06 (23h GMT)
-  { id:'I1',  g:'I', ph:'Groupe', d:'16/06 · 22h00', h:'France',          a:'Sénégal',           fh:'🇫🇷', fa:'🇸🇳', v:'New York/New Jersey' },
-  { id:'I2',  g:'I', ph:'Groupe', d:'17/06 · 01h00', h:'Irak',            a:'Norvège',           fh:'🇮🇶', fa:'🇳🇴', v:'Boston' },
+  { id:'I1',  g:'I', ph:'Groupe', d:'16/06 · 22h00', h:'France',          a:'Sénégal',           fh:'fr', fa:'sn', v:'New York/New Jersey' },
+  { id:'I2',  g:'I', ph:'Groupe', d:'17/06 · 01h00', h:'Irak',            a:'Norvège',           fh:'iq', fa:'no', v:'Boston' },
   // 22/06 : France-Irak 00h00 23/06 (22h GMT), Norvège-Sénégal 03h00 23/06 (01h GMT)
-  { id:'I3',  g:'I', ph:'Groupe', d:'23/06 · 00h00', h:'France',          a:'Irak',              fh:'🇫🇷', fa:'🇮🇶', v:'Philadelphie' },
-  { id:'I4',  g:'I', ph:'Groupe', d:'23/06 · 03h00', h:'Norvège',         a:'Sénégal',           fh:'🇳🇴', fa:'🇸🇳', v:'New York/New Jersey' },
+  { id:'I3',  g:'I', ph:'Groupe', d:'23/06 · 00h00', h:'France',          a:'Irak',              fh:'fr', fa:'iq', v:'Philadelphie' },
+  { id:'I4',  g:'I', ph:'Groupe', d:'23/06 · 03h00', h:'Norvège',         a:'Sénégal',           fh:'no', fa:'sn', v:'New York/New Jersey' },
   // 26/06 simultanés : Norvège-France 22h00 (20h GMT), Sénégal-Irak 22h00 (20h GMT)
-  { id:'I5',  g:'I', ph:'Groupe', d:'26/06 · 22h00', h:'Norvège',         a:'France',            fh:'🇳🇴', fa:'🇫🇷', v:'Boston' },
-  { id:'I6',  g:'I', ph:'Groupe', d:'26/06 · 22h00', h:'Sénégal',         a:'Irak',              fh:'🇸🇳', fa:'🇮🇶', v:'Toronto' },
+  { id:'I5',  g:'I', ph:'Groupe', d:'26/06 · 22h00', h:'Norvège',         a:'France',            fh:'no', fa:'fr', v:'Boston' },
+  { id:'I6',  g:'I', ph:'Groupe', d:'26/06 · 22h00', h:'Sénégal',         a:'Irak',              fh:'sn', fa:'iq', v:'Toronto' },
   // ── GROUPE J : Argentine, Algérie, Autriche, Jordanie ──
   // 16/06 : Argentine-Algérie 05h00 17/06 (03h GMT), Autriche-Jordanie 10h00 17/06 (08h GMT)
-  { id:'J1',  g:'J', ph:'Groupe', d:'17/06 · 05h00', h:'Argentine',       a:'Algérie',           fh:'🇦🇷', fa:'🇩🇿', v:'Kansas City' },
-  { id:'J2',  g:'J', ph:'Groupe', d:'17/06 · 10h00', h:'Autriche',        a:'Jordanie',          fh:'🇦🇹', fa:'🇯🇴', v:'San Francisco' },
+  { id:'J1',  g:'J', ph:'Groupe', d:'17/06 · 05h00', h:'Argentine',       a:'Algérie',           fh:'ar', fa:'dz', v:'Kansas City' },
+  { id:'J2',  g:'J', ph:'Groupe', d:'17/06 · 10h00', h:'Autriche',        a:'Jordanie',          fh:'at', fa:'jo', v:'San Francisco' },
   // 22/06 : Argentine-Autriche 21h00 (19h GMT), Jordanie-Algérie 09h00 23/06 (07h GMT)
-  { id:'J3',  g:'J', ph:'Groupe', d:'22/06 · 21h00', h:'Argentine',       a:'Autriche',          fh:'🇦🇷', fa:'🇦🇹', v:'Dallas' },
-  { id:'J4',  g:'J', ph:'Groupe', d:'23/06 · 09h00', h:'Jordanie',        a:'Algérie',           fh:'🇯🇴', fa:'🇩🇿', v:'San Francisco' },
+  { id:'J3',  g:'J', ph:'Groupe', d:'22/06 · 21h00', h:'Argentine',       a:'Autriche',          fh:'ar', fa:'at', v:'Dallas' },
+  { id:'J4',  g:'J', ph:'Groupe', d:'23/06 · 09h00', h:'Jordanie',        a:'Algérie',           fh:'jo', fa:'dz', v:'San Francisco' },
   // 27/06 simultanés : Algérie-Autriche 06h00 28/06 (04h GMT), Jordanie-Argentine 06h00 28/06 (04h GMT)
-  { id:'J5',  g:'J', ph:'Groupe', d:'28/06 · 06h00', h:'Algérie',         a:'Autriche',          fh:'🇩🇿', fa:'🇦🇹', v:'Kansas City' },
-  { id:'J6',  g:'J', ph:'Groupe', d:'28/06 · 06h00', h:'Jordanie',        a:'Argentine',         fh:'🇯🇴', fa:'🇦🇷', v:'Dallas' },
+  { id:'J5',  g:'J', ph:'Groupe', d:'28/06 · 06h00', h:'Algérie',         a:'Autriche',          fh:'dz', fa:'at', v:'Kansas City' },
+  { id:'J6',  g:'J', ph:'Groupe', d:'28/06 · 06h00', h:'Jordanie',        a:'Argentine',         fh:'jo', fa:'ar', v:'Dallas' },
   // ── GROUPE K : Portugal, RD Congo, Ouzbékistan, Colombie ──
   // 17/06 : Portugal-RDC 21h00 (19h GMT), Ouzbékistan-Colombie 00h00 18/06 (22h GMT)
-  { id:'K1',  g:'K', ph:'Groupe', d:'17/06 · 21h00', h:'Portugal',        a:'RD Congo',          fh:'🇵🇹', fa:'🇨🇩', v:'Houston' },
-  { id:'K2',  g:'K', ph:'Groupe', d:'18/06 · 00h00', h:'Ouzbékistan',     a:'Colombie',          fh:'🇺🇿', fa:'🇨🇴', v:'Mexico' },
+  { id:'K1',  g:'K', ph:'Groupe', d:'17/06 · 21h00', h:'Portugal',        a:'RD Congo',          fh:'pt', fa:'cd', v:'Houston' },
+  { id:'K2',  g:'K', ph:'Groupe', d:'18/06 · 00h00', h:'Ouzbékistan',     a:'Colombie',          fh:'uz', fa:'co', v:'Mexico' },
   // 23/06 : Portugal-Ouzbékistan 21h00 (19h GMT), Colombie-RDC 06h00 24/06 (04h GMT)
-  { id:'K3',  g:'K', ph:'Groupe', d:'23/06 · 21h00', h:'Portugal',        a:'Ouzbékistan',       fh:'🇵🇹', fa:'🇺🇿', v:'Houston' },
-  { id:'K4',  g:'K', ph:'Groupe', d:'24/06 · 06h00', h:'Colombie',        a:'RD Congo',          fh:'🇨🇴', fa:'🇨🇩', v:'Guadalajara' },
+  { id:'K3',  g:'K', ph:'Groupe', d:'23/06 · 21h00', h:'Portugal',        a:'Ouzbékistan',       fh:'pt', fa:'uz', v:'Houston' },
+  { id:'K4',  g:'K', ph:'Groupe', d:'24/06 · 06h00', h:'Colombie',        a:'RD Congo',          fh:'co', fa:'cd', v:'Guadalajara' },
   // 27/06 simultanés : Colombie-Portugal 04h30 28/06 (02h30 GMT), RDC-Ouzbékistan 04h30 28/06 (02h30 GMT)
-  { id:'K5',  g:'K', ph:'Groupe', d:'28/06 · 04h30', h:'Colombie',        a:'Portugal',          fh:'🇨🇴', fa:'🇵🇹', v:'Miami' },
-  { id:'K6',  g:'K', ph:'Groupe', d:'28/06 · 04h30', h:'RD Congo',        a:'Ouzbékistan',       fh:'🇨🇩', fa:'🇺🇿', v:'Atlanta' },
+  { id:'K5',  g:'K', ph:'Groupe', d:'28/06 · 04h30', h:'Colombie',        a:'Portugal',          fh:'co', fa:'pt', v:'Miami' },
+  { id:'K6',  g:'K', ph:'Groupe', d:'28/06 · 04h30', h:'RD Congo',        a:'Ouzbékistan',       fh:'cd', fa:'uz', v:'Atlanta' },
   // ── GROUPE L : Angleterre, Croatie, Ghana, Panama ──
   // 17/06 : Angleterre-Croatie 00h00 18/06 (22h GMT), Ghana-Panama 02h00 18/06 (00h GMT)
-  { id:'L1',  g:'L', ph:'Groupe', d:'18/06 · 00h00', h:'Angleterre',      a:'Croatie',           fh:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', fa:'🇭🇷', v:'Dallas' },
-  { id:'L2',  g:'L', ph:'Groupe', d:'18/06 · 02h00', h:'Ghana',           a:'Panama',            fh:'🇬🇭', fa:'🇵🇦', v:'Toronto' },
+  { id:'L1',  g:'L', ph:'Groupe', d:'18/06 · 00h00', h:'Angleterre',      a:'Croatie',           fh:'gb-eng', fa:'hr', v:'Dallas' },
+  { id:'L2',  g:'L', ph:'Groupe', d:'18/06 · 02h00', h:'Ghana',           a:'Panama',            fh:'gh', fa:'pa', v:'Toronto' },
   // 23/06 : Angleterre-Ghana 23h00 (21h GMT), Panama-Croatie 02h00 24/06 (00h GMT)
-  { id:'L3',  g:'L', ph:'Groupe', d:'23/06 · 23h00', h:'Angleterre',      a:'Ghana',             fh:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', fa:'🇬🇭', v:'Boston' },
-  { id:'L4',  g:'L', ph:'Groupe', d:'24/06 · 02h00', h:'Panama',          a:'Croatie',           fh:'🇵🇦', fa:'🇭🇷', v:'Toronto' },
+  { id:'L3',  g:'L', ph:'Groupe', d:'23/06 · 23h00', h:'Angleterre',      a:'Ghana',             fh:'gb-eng', fa:'gh', v:'Boston' },
+  { id:'L4',  g:'L', ph:'Groupe', d:'24/06 · 02h00', h:'Panama',          a:'Croatie',           fh:'pa', fa:'hr', v:'Toronto' },
   // 27/06 simultanés : Panama-Angleterre 00h00 28/06 (22h GMT), Croatie-Ghana 00h00 28/06 (22h GMT)
-  { id:'L5',  g:'L', ph:'Groupe', d:'28/06 · 00h00', h:'Panama',          a:'Angleterre',        fh:'🇵🇦', fa:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', v:'New York/New Jersey' },
-  { id:'L6',  g:'L', ph:'Groupe', d:'28/06 · 00h00', h:'Croatie',         a:'Ghana',             fh:'🇭🇷', fa:'🇬🇭', v:'Philadelphie' },
+  { id:'L5',  g:'L', ph:'Groupe', d:'28/06 · 00h00', h:'Panama',          a:'Angleterre',        fh:'pa', fa:'gb-eng', v:'New York/New Jersey' },
+  { id:'L6',  g:'L', ph:'Groupe', d:'28/06 · 00h00', h:'Croatie',         a:'Ghana',             fh:'hr', fa:'gh', v:'Philadelphie' },
   // ── 32es (28 juin – 3 juillet) ──
-  { id:'R32_1',  g:'', ph:'32es', d:'28/06', h:'1er Groupe A', a:'2e Groupe B',  fh:'🔵', fa:'🔴', v:'Los Angeles' },
-  { id:'R32_2',  g:'', ph:'32es', d:'29/06', h:'1er Groupe C', a:'2e Groupe D',  fh:'🔵', fa:'🔴', v:'Houston' },
-  { id:'R32_3',  g:'', ph:'32es', d:'29/06', h:'1er Groupe E', a:'2e Groupe F',  fh:'🔵', fa:'🔴', v:'Boston' },
-  { id:'R32_4',  g:'', ph:'32es', d:'30/06', h:'1er Groupe G', a:'2e Groupe H',  fh:'🔵', fa:'🔴', v:'Dallas' },
-  { id:'R32_5',  g:'', ph:'32es', d:'30/06', h:'1er Groupe I', a:'2e Groupe J',  fh:'🔵', fa:'🔴', v:'New York/NJ' },
-  { id:'R32_6',  g:'', ph:'32es', d:'01/07', h:'1er Groupe K', a:'2e Groupe L',  fh:'🔵', fa:'🔴', v:'Atlanta' },
-  { id:'R32_7',  g:'', ph:'32es', d:'01/07', h:'1er Groupe B', a:'2e Groupe A',  fh:'🔵', fa:'🔴', v:'Seattle' },
-  { id:'R32_8',  g:'', ph:'32es', d:'02/07', h:'1er Groupe D', a:'2e Groupe C',  fh:'🔵', fa:'🔴', v:'Los Angeles' },
-  { id:'R32_9',  g:'', ph:'32es', d:'02/07', h:'1er Groupe F', a:'2e Groupe E',  fh:'🔵', fa:'🔴', v:'Toronto' },
-  { id:'R32_10', g:'', ph:'32es', d:'03/07', h:'1er Groupe H', a:'2e Groupe G',  fh:'🔵', fa:'🔴', v:'Dallas' },
-  { id:'R32_11', g:'', ph:'32es', d:'03/07', h:'1er Groupe J', a:'2e Groupe I',  fh:'🔵', fa:'🔴', v:'Miami' },
-  { id:'R32_12', g:'', ph:'32es', d:'04/07', h:'1er Groupe L', a:'2e Groupe K',  fh:'🔵', fa:'🔴', v:'Kansas City' },
-  { id:'R32_13', g:'', ph:'32es', d:'03/07', h:'3e (A/B/C/D)', a:'3e (E/F/G/H)',fh:'🔵', fa:'🔴', v:'TBD' },
-  { id:'R32_14', g:'', ph:'32es', d:'04/07', h:'3e (I/J/K/L)', a:'3e (autre)',   fh:'🔵', fa:'🔴', v:'TBD' },
-  { id:'R32_15', g:'', ph:'32es', d:'02/07', h:'3e (autre 2)', a:'3e (autre 3)', fh:'🔵', fa:'🔴', v:'Vancouver' },
-  { id:'R32_16', g:'', ph:'32es', d:'01/07', h:'3e (autre 4)', a:'3e (autre 5)', fh:'🔵', fa:'🔴', v:'San Francisco' },
+  { id:'R32_1',  g:'', ph:'32es', d:'28/06', h:'1er Groupe A', a:'2e Groupe B',  fh:'_flag_ko', fa:'_flag_ko', v:'Los Angeles' },
+  { id:'R32_2',  g:'', ph:'32es', d:'29/06', h:'1er Groupe C', a:'2e Groupe D',  fh:'_flag_ko', fa:'_flag_ko', v:'Houston' },
+  { id:'R32_3',  g:'', ph:'32es', d:'29/06', h:'1er Groupe E', a:'2e Groupe F',  fh:'_flag_ko', fa:'_flag_ko', v:'Boston' },
+  { id:'R32_4',  g:'', ph:'32es', d:'30/06', h:'1er Groupe G', a:'2e Groupe H',  fh:'_flag_ko', fa:'_flag_ko', v:'Dallas' },
+  { id:'R32_5',  g:'', ph:'32es', d:'30/06', h:'1er Groupe I', a:'2e Groupe J',  fh:'_flag_ko', fa:'_flag_ko', v:'New York/NJ' },
+  { id:'R32_6',  g:'', ph:'32es', d:'01/07', h:'1er Groupe K', a:'2e Groupe L',  fh:'_flag_ko', fa:'_flag_ko', v:'Atlanta' },
+  { id:'R32_7',  g:'', ph:'32es', d:'01/07', h:'1er Groupe B', a:'2e Groupe A',  fh:'_flag_ko', fa:'_flag_ko', v:'Seattle' },
+  { id:'R32_8',  g:'', ph:'32es', d:'02/07', h:'1er Groupe D', a:'2e Groupe C',  fh:'_flag_ko', fa:'_flag_ko', v:'Los Angeles' },
+  { id:'R32_9',  g:'', ph:'32es', d:'02/07', h:'1er Groupe F', a:'2e Groupe E',  fh:'_flag_ko', fa:'_flag_ko', v:'Toronto' },
+  { id:'R32_10', g:'', ph:'32es', d:'03/07', h:'1er Groupe H', a:'2e Groupe G',  fh:'_flag_ko', fa:'_flag_ko', v:'Dallas' },
+  { id:'R32_11', g:'', ph:'32es', d:'03/07', h:'1er Groupe J', a:'2e Groupe I',  fh:'_flag_ko', fa:'_flag_ko', v:'Miami' },
+  { id:'R32_12', g:'', ph:'32es', d:'04/07', h:'1er Groupe L', a:'2e Groupe K',  fh:'_flag_ko', fa:'_flag_ko', v:'Kansas City' },
+  { id:'R32_13', g:'', ph:'32es', d:'03/07', h:'3e (A/B/C/D)', a:'3e (E/F/G/H)',fh:'_flag_ko', fa:'_flag_ko', v:'TBD' },
+  { id:'R32_14', g:'', ph:'32es', d:'04/07', h:'3e (I/J/K/L)', a:'3e (autre)',   fh:'_flag_ko', fa:'_flag_ko', v:'TBD' },
+  { id:'R32_15', g:'', ph:'32es', d:'02/07', h:'3e (autre 2)', a:'3e (autre 3)', fh:'_flag_ko', fa:'_flag_ko', v:'Vancouver' },
+  { id:'R32_16', g:'', ph:'32es', d:'01/07', h:'3e (autre 4)', a:'3e (autre 5)', fh:'_flag_ko', fa:'_flag_ko', v:'San Francisco' },
   // ── 8es (4–7 juillet) ──
-  { id:'R16_1', g:'', ph:'8es', d:'04/07', h:'Vainqueur 32e-1', a:'Vainqueur 32e-2', fh:'🔵', fa:'🔴', v:'Houston' },
-  { id:'R16_2', g:'', ph:'8es', d:'05/07', h:'Vainqueur 32e-3', a:'Vainqueur 32e-4', fh:'🔵', fa:'🔴', v:'Philadelphie' },
-  { id:'R16_3', g:'', ph:'8es', d:'05/07', h:'Vainqueur 32e-5', a:'Vainqueur 32e-6', fh:'🔵', fa:'🔴', v:'New York/NJ' },
-  { id:'R16_4', g:'', ph:'8es', d:'06/07', h:'Vainqueur 32e-7', a:'Vainqueur 32e-8', fh:'🔵', fa:'🔴', v:'Dallas' },
-  { id:'R16_5', g:'', ph:'8es', d:'06/07', h:'Vainqueur 32e-9', a:'Vainqueur 32e-10',fh:'🔵', fa:'🔴', v:'Seattle' },
-  { id:'R16_6', g:'', ph:'8es', d:'07/07', h:'Vainqueur 32e-11',a:'Vainqueur 32e-12',fh:'🔵', fa:'🔴', v:'Atlanta' },
-  { id:'R16_7', g:'', ph:'8es', d:'07/07', h:'Vainqueur 32e-13',a:'Vainqueur 32e-14',fh:'🔵', fa:'🔴', v:'Vancouver' },
-  { id:'R16_8', g:'', ph:'8es', d:'05/07', h:'Vainqueur 32e-15',a:'Vainqueur 32e-16',fh:'🔵', fa:'🔴', v:'Mexico' },
+  { id:'R16_1', g:'', ph:'8es', d:'04/07', h:'Vainqueur 32e-1', a:'Vainqueur 32e-2', fh:'_flag_ko', fa:'_flag_ko', v:'Houston' },
+  { id:'R16_2', g:'', ph:'8es', d:'05/07', h:'Vainqueur 32e-3', a:'Vainqueur 32e-4', fh:'_flag_ko', fa:'_flag_ko', v:'Philadelphie' },
+  { id:'R16_3', g:'', ph:'8es', d:'05/07', h:'Vainqueur 32e-5', a:'Vainqueur 32e-6', fh:'_flag_ko', fa:'_flag_ko', v:'New York/NJ' },
+  { id:'R16_4', g:'', ph:'8es', d:'06/07', h:'Vainqueur 32e-7', a:'Vainqueur 32e-8', fh:'_flag_ko', fa:'_flag_ko', v:'Dallas' },
+  { id:'R16_5', g:'', ph:'8es', d:'06/07', h:'Vainqueur 32e-9', a:'Vainqueur 32e-10',fh:'_flag_ko', fa:'_flag_ko', v:'Seattle' },
+  { id:'R16_6', g:'', ph:'8es', d:'07/07', h:'Vainqueur 32e-11',a:'Vainqueur 32e-12',fh:'_flag_ko', fa:'_flag_ko', v:'Atlanta' },
+  { id:'R16_7', g:'', ph:'8es', d:'07/07', h:'Vainqueur 32e-13',a:'Vainqueur 32e-14',fh:'_flag_ko', fa:'_flag_ko', v:'Vancouver' },
+  { id:'R16_8', g:'', ph:'8es', d:'05/07', h:'Vainqueur 32e-15',a:'Vainqueur 32e-16',fh:'_flag_ko', fa:'_flag_ko', v:'Mexico' },
   // ── Quarts (9–11 juillet) ──
-  { id:'QF1', g:'', ph:'Quarts', d:'09/07', h:'Vainqueur 8e-1', a:'Vainqueur 8e-2', fh:'🔵', fa:'🔴', v:'Boston' },
-  { id:'QF2', g:'', ph:'Quarts', d:'10/07', h:'Vainqueur 8e-3', a:'Vainqueur 8e-4', fh:'🔵', fa:'🔴', v:'Los Angeles' },
-  { id:'QF3', g:'', ph:'Quarts', d:'11/07', h:'Vainqueur 8e-5', a:'Vainqueur 8e-6', fh:'🔵', fa:'🔴', v:'Miami' },
-  { id:'QF4', g:'', ph:'Quarts', d:'11/07', h:'Vainqueur 8e-7', a:'Vainqueur 8e-8', fh:'🔵', fa:'🔴', v:'Kansas City' },
+  { id:'QF1', g:'', ph:'Quarts', d:'09/07', h:'Vainqueur 8e-1', a:'Vainqueur 8e-2', fh:'_flag_ko', fa:'_flag_ko', v:'Boston' },
+  { id:'QF2', g:'', ph:'Quarts', d:'10/07', h:'Vainqueur 8e-3', a:'Vainqueur 8e-4', fh:'_flag_ko', fa:'_flag_ko', v:'Los Angeles' },
+  { id:'QF3', g:'', ph:'Quarts', d:'11/07', h:'Vainqueur 8e-5', a:'Vainqueur 8e-6', fh:'_flag_ko', fa:'_flag_ko', v:'Miami' },
+  { id:'QF4', g:'', ph:'Quarts', d:'11/07', h:'Vainqueur 8e-7', a:'Vainqueur 8e-8', fh:'_flag_ko', fa:'_flag_ko', v:'Kansas City' },
   // ── Demis (14–15 juillet) ──
-  { id:'SF1', g:'', ph:'Demis', d:'14/07', h:'Vainqueur QF1', a:'Vainqueur QF2', fh:'🔵', fa:'🔴', v:'Dallas' },
-  { id:'SF2', g:'', ph:'Demis', d:'15/07', h:'Vainqueur QF3', a:'Vainqueur QF4', fh:'🔵', fa:'🔴', v:'Atlanta' },
+  { id:'SF1', g:'', ph:'Demis', d:'14/07', h:'Vainqueur QF1', a:'Vainqueur QF2', fh:'_flag_ko', fa:'_flag_ko', v:'Dallas' },
+  { id:'SF2', g:'', ph:'Demis', d:'15/07', h:'Vainqueur QF3', a:'Vainqueur QF4', fh:'_flag_ko', fa:'_flag_ko', v:'Atlanta' },
   // ── Finale (18–19 juillet) ──
-  { id:'P3',  g:'', ph:'Finale', d:'18/07', h:'Perdant SF1',   a:'Perdant SF2',   fh:'🔵', fa:'🔴', v:'Miami' },
-  { id:'FIN', g:'', ph:'Finale', d:'19/07', h:'Vainqueur SF1', a:'Vainqueur SF2', fh:'🏆', fa:'🏆', v:'New York/New Jersey' },
+  { id:'P3',  g:'', ph:'Finale', d:'18/07', h:'Perdant SF1',   a:'Perdant SF2',   fh:'_flag_ko', fa:'_flag_ko', v:'Miami' },
+  { id:'FIN', g:'', ph:'Finale', d:'19/07', h:'Vainqueur SF1', a:'Vainqueur SF2', fh:'_flag_ko', fa:'_flag_ko', v:'New York/New Jersey' },
 ];
 
 const PHASES = ['Groupe','32es','8es','Quarts','Demis','Finale'];
@@ -1663,6 +1749,17 @@ function renderMatches(){
   updateStats();
 }
 
+// ── Rendu drapeau via flagcdn.com (compatible tous navigateurs) ──
+function flagImg(code){
+  if(!code || code==='_flag_ko') return '<span style="font-size:22px;opacity:.4;">⬜</span>';
+  return `<img src="https://flagcdn.com/h40/${code}.png"
+               srcset="https://flagcdn.com/h80/${code}.png 2x"
+               height="28"
+               style="border-radius:3px;object-fit:cover;flex-shrink:0;vertical-align:middle;"
+               alt="${code}"
+               onerror="this.style.display='none'">`;
+}
+
 // Parse "13/06 · 03h00" -> Date Paris CEST (UTC+2, year 2026)
 function matchKickoff(m){
   const match = m.d.match(/(\d{2})\/(\d{2})\s*·\s*(\d{2})h(\d{2})/);
@@ -1699,7 +1796,7 @@ function makeCard(m,myPronos,results){
 
   card.innerHTML=`
     <div class="team-side">
-      <span class="team-flag">${m.fh}</span>
+      ${flagImg(m.fh)}
       <span class="team-name">${m.h}</span>
     </div>
     <div class="match-middle">
@@ -1712,7 +1809,7 @@ function makeCard(m,myPronos,results){
       <div class="prono-action" style="margin-top:10px;justify-content:center;">${makeAction(m,prono,result,pts,locked)}</div>
     </div>
     <div class="team-side right">
-      <span class="team-flag">${m.fa}</span>
+      ${flagImg(m.fa)}
       <span class="team-name">${m.a}</span>
     </div>`;
   return card;
@@ -1788,19 +1885,55 @@ function playerScore(code){
 // ══════════════════════════════════════════
 function updateStats(){
   const s=playerScore(CU.code);
+  const players=getPlayers();
+  const ranked=players.map(p=>({...p,...playerScore(p.code)}))
+                       .sort((a,b)=>b.total-a.total||b.exact-a.exact);
+  const rank=ranked.findIndex(p=>p.code===CU.code)+1;
+
   el('stat-pts').textContent=s.total;
-  el('stat-pronos').textContent=s.totalPronos;
-  const all=getPlayers().map(p=>playerScore(p.code).total).sort((a,b)=>b-a);
-  const rank=all.indexOf(s.total)+1;
+  el('stat-pronos').textContent=`${s.totalPronos}/72`;
   el('stat-rank').textContent=rank>0?`#${rank}`:'—';
 
-  // Barre de progression : matchs disponibles (pas encore commencés)
-  const total=MATCHES.filter(m=>m.ph==='Groupe').length; // 72 matchs de groupe
+  // Barre de progression
+  const total=72;
   const done=s.totalPronos;
-  const pct=total>0?Math.round(done/total*100):0;
+  const pct=Math.round(done/total*100);
   el('progress-fill').style.width=pct+'%';
   el('progress-pct').textContent=pct+'%';
   el('progress-label').textContent=`${done}/${total} matchs pronostiqués`;
+
+  // Mini leaderboard dans le banner
+  const mlb=el('banner-mini-lb');
+  if(!mlb) return;
+  mlb.innerHTML='';
+  if(ranked.length===0){ mlb.innerHTML='<div class="mini-lb-dots">Aucun joueur</div>'; return; }
+
+  const myIdx=ranked.findIndex(p=>p.code===CU.code);
+  // Toujours afficher top 3, + le joueur actuel s'il n'est pas dans le top 3
+  const toShow=new Set([0,1,2]);
+  if(myIdx>=0) toShow.add(myIdx);
+  const indices=[...toShow].filter(i=>i<ranked.length).sort((a,b)=>a-b);
+
+  let prev=-1;
+  indices.forEach(i=>{
+    if(prev>=0 && i>prev+1){
+      const dots=document.createElement('div');
+      dots.className='mini-lb-dots';
+      dots.textContent='···';
+      mlb.appendChild(dots);
+    }
+    const p=ranked[i];
+    const r=i+1;
+    const isMe=p.code===CU.code;
+    const rankCls=r===1?'r1':r===2?'r2':r===3?'r3':'';
+    const row=document.createElement('div');
+    row.className='mini-lb-row'+(isMe?' is-me':'');
+    row.innerHTML=`<span class="mini-lb-rank ${rankCls}">${r}</span>
+      <span class="mini-lb-name">${p.prenom} ${p.nom}${isMe?' 👤':''}</span>
+      <span class="mini-lb-pts">${p.total} pts</span>`;
+    mlb.appendChild(row);
+    prev=i;
+  });
 }
 
 // ══════════════════════════════════════════
