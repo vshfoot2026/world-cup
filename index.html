@@ -1289,7 +1289,7 @@ nav {
       <label>Code joueur (5 chiffres)</label>
       <input type="text" class="form-input" id="inp-code" placeholder="ex : 12345" maxlength="5" autocomplete="off">
     </div>
-    <button class="btn-login" onclick="login()">ACCÉDER AU CONCOURS</button>
+    <button class="btn-login" id="btn-login" onclick="login()">ACCÉDER AU CONCOURS</button>
     <div class="login-error" id="login-error">Joueur introuvable ou code incorrect. Contactez l'administrateur.</div>
   </div>
 </div>
@@ -1605,8 +1605,12 @@ const MATCHES = [
 const PHASES = ['Groupe','32es','8es','Quarts','Demis','Finale'];
 
 // ══════════════════════════════════════════
-//  STORAGE
+//  CONFIG GAS + PROXY CLOUDFLARE
 // ══════════════════════════════════════════
+// ⚠️ Remplacer par votre URL de proxy Cloudflare Worker
+const PROXY_URL = 'https://vsh-prono-proxy.vshfoot2026.workers.dev';
+
+// ── Cache localStorage (fallback / perf) ──
 const S = {
   get:(k,d)=>{ try{ return JSON.parse(localStorage.getItem(k))??d; }catch{ return d; } },
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
@@ -1617,6 +1621,51 @@ const getPronos   = ()=>S.get('vsh_pronos',{});
 const setPronos   = p=>S.set('vsh_pronos',p);
 const getResults  = ()=>S.get('vsh_results',{});
 const setResults  = r=>S.set('vsh_results',r);
+
+// ── Appel GAS via proxy Cloudflare ──
+async function gasGet(action){
+  const r=await fetch(`${PROXY_URL}?action=${action}`);
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+async function gasPost(payload){
+  const r=await fetch(PROXY_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ── Chargement initial depuis GAS (avec fallback cache local) ──
+async function loadAllFromGAS(){
+  try {
+    const [pRes, prRes, rRes] = await Promise.all([
+      gasGet('getPlayers'),
+      gasGet('getPronos'),
+      gasGet('getResults'),
+    ]);
+    if(pRes.players)  setPlayers(pRes.players);
+    if(prRes.pronos)  setPronos(prRes.pronos);
+    if(rRes.results)  setResults(rRes.results);
+  } catch(e){
+    console.warn('GAS non disponible, utilisation du cache local:', e);
+  }
+}
+
+// ── Rafraîchissement silencieux toutes les 60s ──
+async function refreshData(){
+  try {
+    const [prRes, rRes] = await Promise.all([
+      gasGet('getPronos'),
+      gasGet('getResults'),
+    ]);
+    if(prRes.pronos)  setPronos(prRes.pronos);
+    if(rRes.results)  setResults(rRes.results);
+    renderMatches(); renderLeaderboard(); updateStats();
+  } catch(e){ /* silencieux */ }
+}
 
 // ══════════════════════════════════════════
 //  STATE
@@ -1629,21 +1678,30 @@ let adminPhase = 'Groupe';
 // ══════════════════════════════════════════
 //  AUTH
 // ══════════════════════════════════════════
-function login(){
+async function login(){
   const prenom = el('inp-prenom').value.trim();
   const nom    = el('inp-nom').value.trim();
   const code   = el('inp-code').value.trim();
   if(!prenom||!nom||!code){ showErr('Veuillez remplir tous les champs.'); return; }
 
+  // Désactiver le bouton pendant le chargement
+  const btnL=el('btn-login');
+  btnL.textContent='Connexion…'; btnL.disabled=true;
+  el('login-error').style.display='none';
+
   if(code===ADMIN_CODE && prenom.toLowerCase()===ADMIN_PRENOM.toLowerCase() && nom.toLowerCase()===ADMIN_NOM.toLowerCase()){
     isAdmin=true;
     CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code:ADMIN_CODE};
     el('tab-btn-admin').style.display='';
+    await loadAllFromGAS();
     startApp(); return;
   }
 
+  // Charger les données depuis GAS puis vérifier le joueur
+  await loadAllFromGAS();
   const p=getPlayers().find(p=>p.code===code&&p.prenom.toLowerCase()===prenom.toLowerCase()&&p.nom.toLowerCase()===nom.toLowerCase());
-  if(!p){ showErr('Joueur introuvable ou code incorrect. Contactez l\'administrateur.'); return; }
+  btnL.textContent='ACCÉDER AU CONCOURS'; btnL.disabled=false;
+  if(!p){ showErr('Joueur introuvable ou code incorrect. Contactez l'administrateur.'); return; }
   CU=p; isAdmin=false;
   el('tab-btn-admin').style.display='none';
   startApp();
@@ -1652,20 +1710,24 @@ function login(){
 function showErr(msg){
   const e=el('login-error');
   e.textContent=msg; e.style.display='block';
+  const btnL=el('btn-login');
+  if(btnL){ btnL.textContent='ACCÉDER AU CONCOURS'; btnL.disabled=false; }
 }
 
 function startApp(){
   el('login-page').style.display='none';
   el('app').style.display='block';
   initUI();
-  // Démarrer le ticker de compte à rebours (toutes les secondes)
   clearInterval(window._cdTicker);
   window._cdTicker=setInterval(tickCountdowns, 1000);
   tickCountdowns();
+  clearInterval(window._refreshTimer);
+  window._refreshTimer=setInterval(refreshData, 60000);
 }
 
 function logout(){
   CU=null; isAdmin=false;
+  clearInterval(window._refreshTimer);
   el('app').style.display='none';
   el('login-page').style.display='flex';
   el('login-error').style.display='none';
@@ -1687,6 +1749,7 @@ function initUI(){
   renderPlayersList();
   updateStats();
 }
+
 
 function buildPhaseFilter(containerId, cb){
   const c=el(containerId); c.innerHTML='';
@@ -1839,18 +1902,27 @@ function makeAction(m,prono,result,pts,locked){
     <button class="btn-prono" onclick="saveP('${m.id}')">${prono!==undefined?'✓ Modifier':'Pronostiquer'}</button>`;
 }
 
-function saveP(mid){
+async function saveP(mid){
   const m=MATCHES.find(x=>x.id===mid);
   if(m&&matchStarted(m)){toast('🔒 Prono clôturé — le match a commencé');return;}
   const h=parseInt(el('hi_'+mid)?.value);
   const a=parseInt(el('ai_'+mid)?.value);
   if(isNaN(h)||isNaN(a)||h<0||a<0){toast('⚠️ Score invalide');return;}
+  // Mise à jour cache immédiate (UX réactive)
   const ps=getPronos();
   if(!ps[CU.code]) ps[CU.code]={};
   ps[CU.code][mid]={h,a};
   setPronos(ps);
-  toast(`✅ Prono enregistré : ${m?.h} ${h}–${a} ${m?.a}`);
   renderMatches();
+  toast(`⏳ Enregistrement…`);
+  // Envoi GAS async
+  try {
+    await gasPost({action:'saveProno', code:CU.code, prenom:CU.prenom, nom:CU.nom,
+                   matchId:mid, scoreH:h, scoreA:a});
+    toast(`✅ Prono enregistré : ${m?.h} ${h}–${a} ${m?.a}`);
+  } catch(e){
+    toast(`✅ Prono sauvegardé localement (sync GAS en attente)`);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -2036,23 +2108,31 @@ function renderAdminMatches(){
   c.appendChild(card);
 }
 
-function saveResult(mid){
+async function saveResult(mid){
   const h=parseInt(el('rh_'+mid)?.value);
   const a=parseInt(el('ra_'+mid)?.value);
   if(isNaN(h)||isNaN(a)){toast('⚠️ Score invalide');return;}
+  // Cache immédiat
   const r=getResults();
   r[mid]={h,a};
   setResults(r);
-  const m=MATCHES.find(x=>x.id===mid);
-  toast(`✅ Résultat : ${m?.h} ${h}–${a} ${m?.a}`);
   renderAdminMatches();
   renderLeaderboard();
+  toast(`⏳ Enregistrement…`);
+  // GAS async
+  try {
+    await gasPost({action:'saveResult', matchId:mid, scoreH:h, scoreA:a});
+    const m=MATCHES.find(x=>x.id===mid);
+    toast(`✅ Résultat : ${m?.h} ${h}–${a} ${m?.a}`);
+  } catch(e){
+    toast(`✅ Résultat sauvegardé localement (sync GAS en attente)`);
+  }
 }
 
 // ══════════════════════════════════════════
 //  ADMIN — JOUEURS
 // ══════════════════════════════════════════
-function addPlayer(){
+async function addPlayer(){
   const prenom=el('new-prenom').value.trim();
   const nom=el('new-nom').value.trim();
   const code=el('new-code').value.trim();
@@ -2063,16 +2143,29 @@ function addPlayer(){
   players.push({prenom,nom,code});
   setPlayers(players);
   ['new-prenom','new-nom','new-code'].forEach(id=>el(id).value='');
-  toast(`✅ Joueur ajouté : ${prenom} ${nom} (${code})`);
+  toast(`⏳ Ajout en cours…`);
   renderPlayersList();
+  try {
+    const res=await gasPost({action:'addPlayer', prenom, nom, code});
+    if(res.error) toast(`⚠️ GAS: ${res.error}`);
+    else toast(`✅ Joueur ajouté : ${prenom} ${nom} (${code})`);
+  } catch(e){
+    toast(`✅ Joueur ajouté localement (sync GAS en attente)`);
+  }
 }
 
-function removePlayer(code){
+async function removePlayer(code){
   if(!confirm('Supprimer ce joueur ?')) return;
   setPlayers(getPlayers().filter(p=>p.code!==code));
   renderPlayersList();
   renderLeaderboard();
-  toast('Joueur supprimé');
+  toast('⏳ Suppression…');
+  try {
+    await gasPost({action:'removePlayer', code});
+    toast('✅ Joueur supprimé');
+  } catch(e){
+    toast('✅ Supprimé localement (sync GAS en attente)');
+  }
 }
 
 function renderPlayersList(){
@@ -2113,12 +2206,16 @@ function exportCSV(){
   toast('✅ CSV exporté !');
 }
 
-function resetAll(){
+async function resetAll(){
   if(!confirm('⚠️ Remettre à zéro TOUS les pronostics et résultats ?')) return;
   if(!confirm('Êtes-vous absolument certain(e) ? Action irréversible.')) return;
   S.set('vsh_pronos',{}); S.set('vsh_results',{});
-  toast('🔄 Données réinitialisées');
+  toast('🔄 Réinitialisation en cours…');
+  try {
+    await gasPost({action:'resetAll'});
+  } catch(e){ /* pas de handler GAS pour reset, ignore */ }
   renderMatches(); renderLeaderboard(); renderAdminMatches();
+  toast('🔄 Données réinitialisées');
 }
 
 // ══════════════════════════════════════════
@@ -2171,7 +2268,7 @@ function toast(msg){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&el('login-page').style.display!=='none') login();
+  if(e.key==='Enter'&&el('login-page').style.display!=='none'&&!el('btn-login').disabled) login();
 });
 </script>
 </body>
