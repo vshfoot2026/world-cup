@@ -2024,7 +2024,7 @@ function renderAdminMatches(){
     const row=document.createElement('div');
     row.className='result-row';
     row.innerHTML=`
-      <div class="result-match-name">${m.fh} ${m.h} vs ${m.a} ${m.fa}<small>${m.d} · ${m.v}</small></div>
+      <div class="result-match-name">${flagImg(m.fh)} ${m.h} vs ${m.a} ${flagImg(m.fa)}<small>${m.d} · ${m.v}</small></div>
       <div class="result-inputs">
         <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.h:''}" id="rh_${m.id}">
         <span style="color:var(--white30);font-size:14px;font-weight:700;">—</span>
