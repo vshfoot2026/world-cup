@@ -1701,7 +1701,7 @@ async function login(){
   await loadAllFromGAS();
   const p=getPlayers().find(p=>p.code===code&&p.prenom.toLowerCase()===prenom.toLowerCase()&&p.nom.toLowerCase()===nom.toLowerCase());
   btnL.textContent='ACCÉDER AU CONCOURS'; btnL.disabled=false;
-  if(!p){ showErr('Joueur introuvable ou code incorrect. Contactez l'administrateur.'); return; }
+  if(!p){ showErr('Joueur introuvable ou code incorrect. Contactez l\'administrateur.'); return; }
   CU=p; isAdmin=false;
   el('tab-btn-admin').style.display='none';
   startApp();
@@ -2208,7 +2208,7 @@ function exportCSV(){
 
 async function resetAll(){
   if(!confirm('⚠️ Remettre à zéro TOUS les pronostics et résultats ?')) return;
-  if(!confirm('Êtes-vous absolument certain(e) ? Action irréversible.')) return;
+  if(!confirm('\u00cates-vous absolument certain(e) ? Action irr\u00e9versible.')) return;
   S.set('vsh_pronos',{}); S.set('vsh_results',{});
   toast('🔄 Réinitialisation en cours…');
   try {
