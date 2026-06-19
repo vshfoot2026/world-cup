@@ -1262,6 +1262,51 @@ nav {
   .nav-tab { padding: 7px 12px; font-size: 12px; }
   .container { padding: 20px 16px; }
 }
+
+@media (max-width: 600px) {
+  /* Score inputs plus grands sur mobile */
+  .score-inp {
+    width: 52px;
+    height: 48px;
+    font-size: 24px;
+    border-radius: 10px;
+  }
+  .res-inp {
+    width: 52px;
+    height: 48px;
+    font-size: 24px;
+  }
+  /* Bouton pronostiquer pleine largeur sur mobile */
+  .btn-prono {
+    padding: 12px 18px;
+    font-size: 13px;
+    min-height: 48px;
+  }
+  .btn-validate {
+    padding: 12px 14px;
+    min-height: 48px;
+  }
+  /* Action centrée sur mobile */
+  .prono-action {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* Nav plus compacte */
+  .nav-vsh-text { font-size: 18px; letter-spacing: 2px; }
+  .nav-app-title { font-size: 16px; letter-spacing: 2px; }
+  .nav-sep { display: none; }
+  .btn-logout { padding: 6px 10px; font-size: 11px; }
+  /* Login box */
+  .login-box { padding: 32px 20px 28px; }
+  .login-title { font-size: 32px; }
+  /* Phase filter scroll horizontal sur mobile */
+  .phase-filter { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .phase-filter::-webkit-scrollbar { display: none; }
+  .phase-btn { flex-shrink: 0; }
+  /* Cards résultats admin */
+  .result-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .result-inputs { width: 100%; justify-content: flex-start; }
+}
 </style>
 </head>
 <body>
@@ -1435,9 +1480,10 @@ nav {
 // ══════════════════════════════════════════
 //  CONSTANTES ADMIN
 // ══════════════════════════════════════════
-const ADMIN_CODE   = "12567";
 const ADMIN_PRENOM = "vsh2026";
 const ADMIN_NOM    = "admin";
+// Vérification admin : code + identifiants combinés
+function isAdminLogin(p, n, c){ return c==="12567" && p.toLowerCase()===ADMIN_PRENOM.toLowerCase() && n.toLowerCase()===ADMIN_NOM.toLowerCase(); }
 
 // ══════════════════════════════════════════
 //  DONNÉES MATCHS — CdM 2026
@@ -1649,6 +1695,7 @@ async function loadAllFromGAS(){
     if(pRes.players)  setPlayers(pRes.players);
     if(prRes.pronos)  setPronos(prRes.pronos);
     if(rRes.results)  setResults(rRes.results);
+    invalidateRankCache();
   } catch(e){
     console.warn('GAS non disponible, utilisation du cache local:', e);
   }
@@ -1663,14 +1710,48 @@ async function refreshData(){
     ]);
     if(prRes.pronos)  setPronos(prRes.pronos);
     if(rRes.results)  setResults(rRes.results);
+    invalidateRankCache();
     renderMatches(); renderLeaderboard(); updateStats();
   } catch(e){ /* silencieux */ }
 }
 
 // ══════════════════════════════════════════
+//  CACHE CLASSEMENT
+//  Invalidé explicitement à chaque changement
+//  de pronos ou de résultats
+// ══════════════════════════════════════════
+let _rankCache = null; // { ranked: [...], ts: Date.now() }
+
+function invalidateRankCache(){ _rankCache = null; }
+
+function getRanked(){
+  if(_rankCache) return _rankCache.ranked;
+  const players = getPlayers();
+  const results = getResults();
+  const pronos  = getPronos();
+  const ranked  = players
+    .map(p => {
+      const myP = pronos[p.code] || {};
+      let total=0, exact=0, partial=0;
+      for(const [mid, res] of Object.entries(results)){
+        const pr = myP[mid];
+        if(pr !== undefined){
+          const pts = calcPts(pr, res);
+          total += pts;
+          if(pts===3) exact++; else if(pts===1) partial++;
+        }
+      }
+      return { ...p, total, exact, partial, totalPronos: Object.keys(myP).length };
+    })
+    .sort((a,b) => b.total - a.total || b.exact - a.exact);
+  _rankCache = { ranked, ts: Date.now() };
+  return ranked;
+}
+
+
+// ══════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════
-let CU = null; // current user
 let isAdmin = false;
 let pronPhase = 'Groupe';
 let adminPhase = 'Groupe';
@@ -1689,7 +1770,7 @@ async function login(){
   btnL.textContent='Connexion…'; btnL.disabled=true;
   el('login-error').style.display='none';
 
-  if(code===ADMIN_CODE && prenom.toLowerCase()===ADMIN_PRENOM.toLowerCase() && nom.toLowerCase()===ADMIN_NOM.toLowerCase()){
+  if(isAdminLogin(prenom, nom, code)){
     isAdmin=true;
     CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code:ADMIN_CODE};
     el('tab-btn-admin').style.display='';
@@ -1913,6 +1994,7 @@ async function saveP(mid){
   if(!ps[CU.code]) ps[CU.code]={};
   ps[CU.code][mid]={h,a};
   setPronos(ps);
+  invalidateRankCache();
   renderMatches();
   toast(`⏳ Enregistrement…`);
   // Envoi GAS async
@@ -1936,6 +2018,11 @@ function calcPts(prono,result){
 }
 
 function playerScore(code){
+  // Utilise le cache classement si disponible, sinon calcul direct
+  if(_rankCache){
+    const p = _rankCache.ranked.find(p=>p.code===code);
+    if(p) return { total:p.total, exact:p.exact, partial:p.partial, played:p.played||0, totalPronos:p.totalPronos };
+  }
   const pronos=getPronos()[code]||{};
   const results=getResults();
   let total=0,exact=0,partial=0,played=0;
@@ -1956,10 +2043,8 @@ function playerScore(code){
 //  STATS BANNER
 // ══════════════════════════════════════════
 function updateStats(){
-  const s=playerScore(CU.code);
-  const players=getPlayers();
-  const ranked=players.map(p=>({...p,...playerScore(p.code)}))
-                       .sort((a,b)=>b.total-a.total||b.exact-a.exact);
+  const ranked=getRanked();
+  const s=ranked.find(p=>p.code===CU.code) || {total:0,exact:0,partial:0,totalPronos:0};
   const rank=ranked.findIndex(p=>p.code===CU.code)+1;
 
   el('stat-pts').textContent=s.total;
@@ -2012,11 +2097,9 @@ function updateStats(){
 //  LEADERBOARD
 // ══════════════════════════════════════════
 function renderLeaderboard(filter=''){
-  const players=getPlayers();
-  const ranked=players.map(p=>({...p,...playerScore(p.code)}))
-                       .sort((a,b)=>b.total-a.total||b.exact-a.exact);
+  const ranked=getRanked();
   const shown=filter?ranked.filter(p=>`${p.prenom} ${p.nom}`.toLowerCase().includes(filter.toLowerCase())):ranked;
-  el('lb-count').textContent=`${players.length} joueur${players.length!==1?'s':''}`;
+  el('lb-count').textContent=`${ranked.length} joueur${ranked.length!==1?'s':''}`;
 
   // ── Podium (top 3) — masqué si filtre actif
   const podiumEl=el('podium');
@@ -2116,6 +2199,7 @@ async function saveResult(mid){
   const r=getResults();
   r[mid]={h,a};
   setResults(r);
+  invalidateRankCache();
   renderAdminMatches();
   renderLeaderboard();
   toast(`⏳ Enregistrement…`);
@@ -2236,14 +2320,14 @@ function formatCountdown(ms){
 
 function tickCountdowns(){
   const now=Date.now();
+  const results=getResults(); // ✅ lu une seule fois hors boucle (était appelé 72x/s)
   MATCHES.forEach(m=>{
     const cdEl=document.getElementById('cd_'+m.id);
     if(!cdEl) return;
     const ko=matchKickoff(m);
     if(!ko){ cdEl.textContent=''; return; }
     const diff=ko.getTime()-now;
-    const results=getResults();
-    if(results[m.id]){ cdEl.textContent=''; return; } // résultat déjà saisi
+    if(results[m.id]){ cdEl.textContent=''; return; }
     if(diff<=0){
       cdEl.textContent='⚽ En cours';
       cdEl.className='match-countdown live';
