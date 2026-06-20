@@ -1772,7 +1772,7 @@ async function login(){
 
   if(isAdminLogin(prenom, nom, code)){
     isAdmin=true;
-    CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code:ADMIN_CODE};
+    CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code};
     el('tab-btn-admin').style.display='';
     await loadAllFromGAS();
     startApp(); return;
