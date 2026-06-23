@@ -1772,7 +1772,7 @@ async function login(){
 
   if(isAdminLogin(prenom, nom, code)){
     isAdmin=true;
-    CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code};
+    CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code:ADMIN_CODE};
     el('tab-btn-admin').style.display='';
     await loadAllFromGAS();
     startApp(); return;
@@ -1904,26 +1904,49 @@ function flagImg(code){
                onerror="this.style.display='none'">`;
 }
 
-// Parse "13/06 · 03h00" -> Date Paris CEST (UTC+2, year 2026)
+// ── Horaires officiels en UTC (source : calendrier FIFA 2026) ──
+// Paris = UTC+2 en été. Ces timestamps sont la référence fiable du coup d'envoi.
+const KICKOFF_UTC = {
+  A1:'2026-06-11T19:00:00Z', A2:'2026-06-12T00:00:00Z', A3:'2026-06-18T17:00:00Z', A4:'2026-06-19T01:00:00Z', A5:'2026-06-25T01:00:00Z', A6:'2026-06-25T01:00:00Z',
+  B1:'2026-06-12T19:00:00Z', B2:'2026-06-13T19:00:00Z', B3:'2026-06-18T19:00:00Z', B4:'2026-06-18T22:00:00Z', B5:'2026-06-24T19:00:00Z', B6:'2026-06-24T19:00:00Z',
+  C1:'2026-06-13T22:00:00Z', C2:'2026-06-14T00:00:00Z', C4:'2026-06-19T19:00:00Z', C3:'2026-06-20T20:00:00Z', C5:'2026-06-24T22:00:00Z', C6:'2026-06-24T22:00:00Z',
+  D1:'2026-06-13T00:00:00Z', D2:'2026-06-14T02:00:00Z', D4:'2026-06-19T22:00:00Z', D3:'2026-06-19T23:00:00Z', D6:'2026-06-26T02:00:00Z', D5:'2026-06-26T02:00:00Z',
+  E1:'2026-06-14T18:00:00Z', E2:'2026-06-14T23:00:00Z', E3:'2026-06-20T21:00:00Z', E4:'2026-06-21T01:00:00Z', E5:'2026-06-25T20:00:00Z', E6:'2026-06-25T20:00:00Z',
+  F1:'2026-06-14T21:00:00Z', F2:'2026-06-14T22:00:00Z', F3:'2026-06-20T19:00:00Z', F4:'2026-06-21T00:00:00Z', F5:'2026-06-25T23:00:00Z', F6:'2026-06-25T23:00:00Z',
+  G1:'2026-06-14T23:00:00Z', G2:'2026-06-16T05:00:00Z', G3:'2026-06-20T23:00:00Z', G4:'2026-06-22T05:00:00Z', G5:'2026-06-27T03:00:00Z', G6:'2026-06-27T03:00:00Z',
+  H1:'2026-06-15T17:00:00Z', H2:'2026-06-15T23:00:00Z', H3:'2026-06-21T17:00:00Z', H4:'2026-06-20T23:00:00Z', H5:'2026-06-27T00:00:00Z', H6:'2026-06-27T00:00:00Z',
+  I1:'2026-06-16T20:00:00Z', I2:'2026-06-16T23:00:00Z', I3:'2026-06-22T21:00:00Z', I4:'2026-06-23T00:00:00Z', I5:'2026-06-26T19:00:00Z', I6:'2026-06-26T19:00:00Z',
+  J1:'2026-06-17T03:00:00Z', J2:'2026-06-17T08:00:00Z', J3:'2026-06-22T19:00:00Z', J4:'2026-06-23T03:00:00Z', J5:'2026-06-28T02:00:00Z', J6:'2026-06-28T02:00:00Z',
+  K1:'2026-06-17T19:00:00Z', K2:'2026-06-18T22:00:00Z', K3:'2026-06-23T17:00:00Z', K4:'2026-06-24T02:00:00Z', K5:'2026-06-27T23:30:00Z', K6:'2026-06-27T23:30:00Z',
+  L1:'2026-06-17T22:00:00Z', L2:'2026-06-18T00:00:00Z', L3:'2026-06-23T20:00:00Z', L4:'2026-06-23T23:00:00Z', L5:'2026-06-27T21:00:00Z', L6:'2026-06-27T21:00:00Z',
+  R32_1:'2026-06-28T19:00:00Z', R32_2:'2026-06-29T17:00:00Z', R32_3:'2026-06-29T20:30:00Z', R32_4:'2026-07-01T16:00:00Z', R32_5:'2026-06-30T21:00:00Z', R32_6:'2026-06-30T23:00:00Z', R32_7:'2026-07-03T03:00:00Z', R32_8:'2026-07-02T00:00:00Z', R32_9:'2026-06-29T17:00:00Z', R32_10:'2026-07-02T19:00:00Z', R32_11:'2026-07-02T22:00:00Z', R32_12:'2026-07-04T01:30:00Z', R32_13:'2026-06-30T01:00:00Z', R32_14:'2026-07-01T01:00:00Z', R32_15:'2026-06-30T17:00:00Z', R32_16:'2026-06-28T19:00:00Z',
+  R16_1:'2026-07-04T17:00:00Z', R16_2:'2026-07-04T21:00:00Z', R16_3:'2026-07-05T20:00:00Z', R16_4:'2026-07-06T00:00:00Z', R16_5:'2026-07-06T19:00:00Z', R16_6:'2026-07-07T00:00:00Z', R16_7:'2026-07-07T20:00:00Z', R16_8:'2026-07-07T16:00:00Z',
+  QF1:'2026-07-09T20:00:00Z', QF2:'2026-07-10T19:00:00Z', QF3:'2026-07-11T21:00:00Z', QF4:'2026-07-12T01:00:00Z',
+  SF1:'2026-07-14T19:00:00Z', SF2:'2026-07-15T19:00:00Z',
+  P3:'2026-07-18T21:00:00Z', FIN:'2026-07-19T19:00:00Z',
+};
+
+// Coup d'envoi fiable : lit le timestamp UTC officiel (plus de calcul de fuseau fragile)
 function matchKickoff(m){
-  const match = m.d.match(/(\d{2})\/(\d{2})\s*·\s*(\d{2})h(\d{2})/);
-  if(!match) return null;
-  const [,dd,mm,hh,min] = match;
-  // Build ISO string in UTC: Paris CEST = UTC+2, so subtract 2h
-  const utcH = parseInt(hh) - 2;
-  const dateStr = `2026-${mm}-${dd}T${String(utcH<0?utcH+24:utcH).padStart(2,'0')}:${min}:00Z`;
-  // Handle midnight crossover (negative hour = previous day)
-  const d = new Date(dateStr);
-  if(utcH < 0) d.setDate(d.getDate() - 1);
-  return d;
+  const iso = KICKOFF_UTC[m.id];
+  if(!iso) return null;
+  return new Date(iso);
 }
 
-const LOCK_BEFORE_MS = 3 * 60 * 1000; // 3 minutes avant le coup d'envoi
+// Affichage de la date/heure en heure de Paris, à partir du même timestamp UTC.
+// Source unique => l'affichage ne peut jamais diverger du verrouillage.
+function matchDisplayDate(m){
+  const ko = matchKickoff(m);
+  if(!ko) return m.d || '';
+  const parts = new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Paris',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(ko);
+  const g = t => parts.find(p=>p.type===t).value;
+  return `${g('day')}/${g('month')} · ${g('hour')}h${g('minute')}`;
+}
 
 function matchStarted(m){
   const ko = matchKickoff(m);
   if(!ko) return false;
-  return Date.now() >= ko.getTime() - LOCK_BEFORE_MS;
+  return Date.now() >= ko.getTime();
 }
 
 function makeCard(m,myPronos,results){
@@ -1949,7 +1972,7 @@ function makeCard(m,myPronos,results){
       ${played
         ? `<div class="match-result-score">${result.h}&nbsp;—&nbsp;${result.a}</div>`
         : ''}
-      <div class="match-meta">${m.d}</div>
+      <div class="match-meta">${matchDisplayDate(m)}</div>
       <div class="match-city">${m.v}</div>
       <div class="match-countdown" id="cd_${m.id}"></div>
       <div class="prono-action" style="margin-top:10px;justify-content:center;">${makeAction(m,prono,result,pts,locked)}</div>
@@ -2181,7 +2204,7 @@ function renderAdminMatches(){
     const row=document.createElement('div');
     row.className='result-row';
     row.innerHTML=`
-      <div class="result-match-name">${flagImg(m.fh)} ${m.h} vs ${m.a} ${flagImg(m.fa)}<small>${m.d} · ${m.v}</small></div>
+      <div class="result-match-name">${flagImg(m.fh)} ${m.h} vs ${m.a} ${flagImg(m.fa)}<small>${matchDisplayDate(m)} · ${m.v}</small></div>
       <div class="result-inputs">
         <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.h:''}" id="rh_${m.id}">
         <span style="color:var(--white30);font-size:14px;font-weight:700;">—</span>
@@ -2323,32 +2346,22 @@ function formatCountdown(ms){
 function tickCountdowns(){
   const now=Date.now();
   const results=getResults(); // ✅ lu une seule fois hors boucle (était appelé 72x/s)
-  let needsRerender=false;
   MATCHES.forEach(m=>{
     const cdEl=document.getElementById('cd_'+m.id);
     if(!cdEl) return;
     const ko=matchKickoff(m);
     if(!ko){ cdEl.textContent=''; return; }
     const diff=ko.getTime()-now;
-    const lockDiff=diff-LOCK_BEFORE_MS; // temps restant avant verrouillage
     if(results[m.id]){ cdEl.textContent=''; return; }
     if(diff<=0){
       cdEl.textContent='⚽ En cours';
       cdEl.className='match-countdown live';
-    } else if(lockDiff<=0){
-      // Match pas encore commencé mais verrouillé — re-render si les inputs sont encore affichés
-      if(cdEl.closest('.match-card') && cdEl.closest('.match-card').querySelector('.score-inp')){
-        needsRerender=true;
-      }
-      cdEl.textContent='🔒 Clôturé';
-      cdEl.className='match-countdown soon';
     } else {
-      const f=formatCountdown(lockDiff); // countdown vers le verrouillage, pas le KO
+      const f=formatCountdown(diff);
       cdEl.textContent=f.txt;
       cdEl.className='match-countdown '+f.cls;
     }
   });
-  if(needsRerender) renderMatches();
 }
 
 // ══════════════════════════════════════════
