@@ -1428,6 +1428,7 @@ nav {
 
       <div class="admin-tabs">
         <button class="admin-tab active" onclick="showAdminTab('at-results',this)">📋 Saisir les résultats</button>
+        <button class="admin-tab" onclick="showAdminTab('at-knockout',this)">🏆 Phases finales</button>
         <button class="admin-tab" onclick="showAdminTab('at-players',this)">👥 Gérer les joueurs</button>
         <button class="admin-tab" onclick="showAdminTab('at-export',this)">📊 Export</button>
       </div>
@@ -1436,6 +1437,19 @@ nav {
       <div id="at-results" class="tab-content active">
         <div class="phase-filter" id="phase-filter-admin"></div>
         <div id="admin-matches"></div>
+      </div>
+
+      <!-- Phases finales : définir les équipes -->
+      <div id="at-knockout" class="tab-content">
+        <div class="admin-card">
+          <div class="admin-card-title">🏆 Définir les équipes des phases finales</div>
+          <p style="color:var(--white30);font-size:14px;margin-bottom:20px;line-height:1.6;">
+            Au fur et à mesure que les qualifications se précisent, sélectionne les équipes pour chaque match.
+            Les pronostiqueurs verront alors les vraies équipes (nom + drapeau) à la place des placeholders.
+          </p>
+          <div class="phase-filter" id="phase-filter-knockout"></div>
+          <div id="knockout-matches"></div>
+        </div>
       </div>
 
       <!-- Joueurs -->
@@ -1484,6 +1498,32 @@ const ADMIN_PRENOM = "vsh2026";
 const ADMIN_NOM    = "admin";
 // Vérification admin : code + identifiants combinés
 function isAdminLogin(p, n, c){ return c==="12567" && p.toLowerCase()===ADMIN_PRENOM.toLowerCase() && n.toLowerCase()===ADMIN_NOM.toLowerCase(); }
+
+// ══════════════════════════════════════════
+//  LISTE DES ÉQUIPES (nom + code drapeau)
+//  Utilisée pour les menus déroulants des phases finales.
+//  Codes drapeaux identiques à ceux des matchs de groupe.
+// ══════════════════════════════════════════
+const TEAMS = [
+  {n:'Afrique du Sud', f:'za'}, {n:'Algérie', f:'dz'}, {n:'Allemagne', f:'de'},
+  {n:'Angleterre', f:'gb-eng'}, {n:'Arabie Saoudite', f:'sa'}, {n:'Argentine', f:'ar'},
+  {n:'Australie', f:'au'}, {n:'Autriche', f:'at'}, {n:'Belgique', f:'be'},
+  {n:'Bosnie-Herzégovine', f:'ba'}, {n:'Brésil', f:'br'}, {n:'Canada', f:'ca'},
+  {n:'Cap-Vert', f:'cv'}, {n:'Colombie', f:'co'}, {n:'Corée du Sud', f:'kr'},
+  {n:'Croatie', f:'hr'}, {n:'Curaçao', f:'cw'}, {n:"Côte d'Ivoire", f:'ci'},
+  {n:'Espagne', f:'es'}, {n:'France', f:'fr'}, {n:'Ghana', f:'gh'},
+  {n:'Haïti', f:'ht'}, {n:'Irak', f:'iq'}, {n:'Iran', f:'ir'},
+  {n:'Japon', f:'jp'}, {n:'Jordanie', f:'jo'}, {n:'Maroc', f:'ma'},
+  {n:'Mexique', f:'mx'}, {n:'Norvège', f:'no'}, {n:'Nouvelle-Zélande', f:'nz'},
+  {n:'Ouzbékistan', f:'uz'}, {n:'Panama', f:'pa'}, {n:'Paraguay', f:'py'},
+  {n:'Pays-Bas', f:'nl'}, {n:'Portugal', f:'pt'}, {n:'Qatar', f:'qa'},
+  {n:'RD Congo', f:'cd'}, {n:'Rép. Tchèque', f:'cz'}, {n:'Suisse', f:'ch'},
+  {n:'Suède', f:'se'}, {n:'Sénégal', f:'sn'}, {n:'Tunisie', f:'tn'},
+  {n:'Turquie', f:'tr'}, {n:'Uruguay', f:'uy'}, {n:'Écosse', f:'gb-sct'},
+  {n:'Égypte', f:'eg'}, {n:'Équateur', f:'ec'}, {n:'États-Unis', f:'us'},
+];
+// Lookup nom -> code drapeau
+const TEAM_FLAG = Object.fromEntries(TEAMS.map(t=>[t.n, t.f]));
 
 // ══════════════════════════════════════════
 //  DONNÉES MATCHS — CdM 2026
@@ -1667,6 +1707,8 @@ const getPronos   = ()=>S.get('vsh_pronos',{});
 const setPronos   = p=>S.set('vsh_pronos',p);
 const getResults  = ()=>S.get('vsh_results',{});
 const setResults  = r=>S.set('vsh_results',r);
+const getKnockout = ()=>S.get('vsh_knockout',{});
+const setKnockout = k=>S.set('vsh_knockout',k);
 
 // ── Appel GAS via proxy Cloudflare ──
 async function gasGet(action){
@@ -1687,14 +1729,16 @@ async function gasPost(payload){
 // ── Chargement initial depuis GAS (avec fallback cache local) ──
 async function loadAllFromGAS(){
   try {
-    const [pRes, prRes, rRes] = await Promise.all([
+    const [pRes, prRes, rRes, kRes] = await Promise.all([
       gasGet('getPlayers'),
       gasGet('getPronos'),
       gasGet('getResults'),
+      gasGet('getKnockout'),
     ]);
     if(pRes.players)  setPlayers(pRes.players);
     if(prRes.pronos)  setPronos(prRes.pronos);
     if(rRes.results)  setResults(rRes.results);
+    if(kRes.knockout) setKnockout(kRes.knockout);
     invalidateRankCache();
   } catch(e){
     console.warn('GAS non disponible, utilisation du cache local:', e);
@@ -1704,12 +1748,14 @@ async function loadAllFromGAS(){
 // ── Rafraîchissement silencieux toutes les 60s ──
 async function refreshData(){
   try {
-    const [prRes, rRes] = await Promise.all([
+    const [prRes, rRes, kRes] = await Promise.all([
       gasGet('getPronos'),
       gasGet('getResults'),
+      gasGet('getKnockout'),
     ]);
     if(prRes.pronos)  setPronos(prRes.pronos);
     if(rRes.results)  setResults(rRes.results);
+    if(kRes.knockout) setKnockout(kRes.knockout);
     invalidateRankCache();
     renderMatches(); renderLeaderboard(); updateStats();
   } catch(e){ /* silencieux */ }
@@ -1755,6 +1801,7 @@ function getRanked(){
 let isAdmin = false;
 let pronPhase = 'Groupe';
 let adminPhase = 'Groupe';
+let knockoutPhase = '32es';
 
 // ══════════════════════════════════════════
 //  AUTH
@@ -1824,17 +1871,20 @@ function initUI(){
   el('user-avatar').textContent=(CU.prenom[0]||'?').toUpperCase()+(CU.nom[0]||'').toUpperCase();
   buildPhaseFilter('phase-filter-pronos',p=>{pronPhase=p;renderMatches();});
   buildPhaseFilter('phase-filter-admin',p=>{adminPhase=p;renderAdminMatches();});
+  buildPhaseFilter('phase-filter-knockout',p=>{knockoutPhase=p;renderKnockoutMatches();}, PHASES.filter(x=>x!=='Groupe'));
   renderMatches();
   renderLeaderboard();
   renderAdminMatches();
+  renderKnockoutMatches();
   renderPlayersList();
   updateStats();
 }
 
 
-function buildPhaseFilter(containerId, cb){
-  const c=el(containerId); c.innerHTML='';
-  PHASES.forEach((p,i)=>{
+function buildPhaseFilter(containerId, cb, phaseList){
+  const phases = phaseList || PHASES;
+  const c=el(containerId); if(!c) return; c.innerHTML='';
+  phases.forEach((p,i)=>{
     const b=document.createElement('button');
     b.className='phase-btn'+(i===0?' active':'');
     b.textContent=p;
@@ -1860,6 +1910,7 @@ function showAdminTab(tabId, btn){
   document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
   el(tabId).classList.add('active');
   if(btn) btn.classList.add('active');
+  if(tabId==='at-knockout') renderKnockoutMatches();
 }
 
 // ══════════════════════════════════════════
@@ -1951,7 +2002,22 @@ function matchStarted(m){
   return Date.now() >= ko.getTime() - LOCK_BEFORE_MS;
 }
 
-function makeCard(m,myPronos,results){
+// Résout un match : si des équipes ont été définies pour une phase finale,
+// remplace les placeholders (nom + drapeau) par les vraies équipes.
+function resolveMatch(m){
+  const ko = getKnockout()[m.id];
+  if(!ko) return m;
+  return {
+    ...m,
+    h:  ko.h  || m.h,
+    a:  ko.a  || m.a,
+    fh: ko.fh || m.fh,
+    fa: ko.fa || m.fa,
+  };
+}
+
+function makeCard(m0,myPronos,results){
+  const m=resolveMatch(m0);
   const card=document.createElement('div');
   card.className='match-card';
   const prono=myPronos[m.id];
@@ -2186,6 +2252,67 @@ function filterLB(v){ renderLeaderboard(v); }
 // ══════════════════════════════════════════
 //  ADMIN — RÉSULTATS
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+//  ADMIN — PHASES FINALES (définir les équipes)
+// ══════════════════════════════════════════
+function teamOptions(selected){
+  let opts = `<option value="">— À définir —</option>`;
+  TEAMS.forEach(t=>{
+    const sel = t.n===selected ? ' selected' : '';
+    opts += `<option value="${t.n}"${sel}>${t.n}</option>`;
+  });
+  return opts;
+}
+
+function renderKnockoutMatches(){
+  const c=el('knockout-matches');
+  if(!c) return;
+  const ko=getKnockout();
+  // Phases finales seulement
+  const list=MATCHES.filter(m=>m.ph===knockoutPhase && m.ph!=='Groupe');
+  c.innerHTML='';
+  if(list.length===0){
+    c.innerHTML='<div style="color:var(--white30);font-size:14px;padding:16px 0;">Aucun match pour cette phase.</div>';
+    return;
+  }
+  list.forEach(m=>{
+    const saved=ko[m.id]||{};
+    const row=document.createElement('div');
+    row.className='result-row';
+    row.style.cssText='flex-direction:column;align-items:stretch;gap:10px;';
+    row.innerHTML=`
+      <div style="font-size:13px;color:var(--white50);font-weight:600;">
+        ${m.h} <span style="color:var(--white30);">vs</span> ${m.a}
+        <span style="color:var(--white30);font-weight:400;"> · ${matchDisplayDate(m)} · ${m.v}</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <select class="add-input" id="kh_${m.id}" style="flex:1;min-width:160px;">${teamOptions(saved.h)}</select>
+        <span style="color:var(--white30);font-weight:700;">VS</span>
+        <select class="add-input" id="ka_${m.id}" style="flex:1;min-width:160px;">${teamOptions(saved.a)}</select>
+        <button class="btn-validate" onclick="saveKnockoutMatch('${m.id}')">💾 Enregistrer</button>
+      </div>`;
+    c.appendChild(row);
+  });
+}
+
+async function saveKnockoutMatch(mid){
+  const h=el('kh_'+mid)?.value || '';
+  const a=el('ka_'+mid)?.value || '';
+  const ko=getKnockout();
+  ko[mid]={ h, a, fh: TEAM_FLAG[h]||'', fa: TEAM_FLAG[a]||'' };
+  setKnockout(ko);
+  renderKnockoutMatches();
+  renderMatches();      // mettre à jour l'affichage des pronos
+  renderAdminMatches(); // et la saisie des résultats
+  toast('⏳ Enregistrement…');
+  try {
+    await gasPost({action:'saveKnockout', knockout: ko});
+    toast(`✅ Équipes enregistrées : ${h||'?'} vs ${a||'?'}`);
+  } catch(e){
+    toast('✅ Enregistré localement (sync GAS en attente)');
+  }
+}
+
 function renderAdminMatches(){
   const c=el('admin-matches');
   const results=getResults();
@@ -2203,10 +2330,11 @@ function renderAdminMatches(){
       card.appendChild(gl);
     }
     const res=results[m.id];
+    const rm=resolveMatch(m);
     const row=document.createElement('div');
     row.className='result-row';
     row.innerHTML=`
-      <div class="result-match-name">${flagImg(m.fh)} ${m.h} vs ${m.a} ${flagImg(m.fa)}<small>${matchDisplayDate(m)} · ${m.v}</small></div>
+      <div class="result-match-name">${flagImg(rm.fh)} ${rm.h} vs ${rm.a} ${flagImg(rm.fa)}<small>${matchDisplayDate(m)} · ${m.v}</small></div>
       <div class="result-inputs">
         <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.h:''}" id="rh_${m.id}">
         <span style="color:var(--white30);font-size:14px;font-weight:700;">—</span>
