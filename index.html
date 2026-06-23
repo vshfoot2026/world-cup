@@ -2286,13 +2286,24 @@ function renderKnockoutMatches(){
         <span style="color:var(--white30);font-weight:400;"> · ${matchDisplayDate(m)} · ${m.v}</span>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <select class="add-input" id="kh_${m.id}" style="flex:1;min-width:160px;">${teamOptions(saved.h)}</select>
+        <span id="kfh_${m.id}" style="display:inline-flex;align-items:center;min-width:34px;">${flagImg(saved.fh)}</span>
+        <select class="add-input" id="kh_${m.id}" style="flex:1;min-width:150px;" onchange="onKnockoutSelect('${m.id}','h')">${teamOptions(saved.h)}</select>
         <span style="color:var(--white30);font-weight:700;">VS</span>
-        <select class="add-input" id="ka_${m.id}" style="flex:1;min-width:160px;">${teamOptions(saved.a)}</select>
+        <select class="add-input" id="ka_${m.id}" style="flex:1;min-width:150px;" onchange="onKnockoutSelect('${m.id}','a')">${teamOptions(saved.a)}</select>
+        <span id="kfa_${m.id}" style="display:inline-flex;align-items:center;min-width:34px;">${flagImg(saved.fa)}</span>
         <button class="btn-validate" onclick="saveKnockoutMatch('${m.id}')">💾 Enregistrer</button>
       </div>`;
     c.appendChild(row);
   });
+}
+
+// Met à jour le drapeau affiché en direct quand on change une sélection
+function onKnockoutSelect(mid, side){
+  const sel = el((side==='h'?'kh_':'ka_')+mid);
+  const flagEl = el((side==='h'?'kfh_':'kfa_')+mid);
+  if(!sel || !flagEl) return;
+  const code = TEAM_FLAG[sel.value] || '';
+  flagEl.innerHTML = flagImg(code);
 }
 
 async function saveKnockoutMatch(mid){
