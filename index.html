@@ -1772,7 +1772,7 @@ async function login(){
 
   if(isAdminLogin(prenom, nom, code)){
     isAdmin=true;
-    CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code:ADMIN_CODE};
+    CU={prenom:ADMIN_PRENOM,nom:ADMIN_NOM,code};
     el('tab-btn-admin').style.display='';
     await loadAllFromGAS();
     startApp(); return;
@@ -1943,10 +1943,12 @@ function matchDisplayDate(m){
   return `${g('day')}/${g('month')} · ${g('hour')}h${g('minute')}`;
 }
 
+const LOCK_BEFORE_MS = 3 * 60 * 1000; // 3 minutes avant le coup d'envoi
+
 function matchStarted(m){
   const ko = matchKickoff(m);
   if(!ko) return false;
-  return Date.now() >= ko.getTime();
+  return Date.now() >= ko.getTime() - LOCK_BEFORE_MS;
 }
 
 function makeCard(m,myPronos,results){
@@ -2346,22 +2348,31 @@ function formatCountdown(ms){
 function tickCountdowns(){
   const now=Date.now();
   const results=getResults(); // ✅ lu une seule fois hors boucle (était appelé 72x/s)
+  let needsRerender=false;
   MATCHES.forEach(m=>{
     const cdEl=document.getElementById('cd_'+m.id);
     if(!cdEl) return;
     const ko=matchKickoff(m);
     if(!ko){ cdEl.textContent=''; return; }
     const diff=ko.getTime()-now;
+    const lockDiff=diff-LOCK_BEFORE_MS; // temps restant avant verrouillage
     if(results[m.id]){ cdEl.textContent=''; return; }
     if(diff<=0){
       cdEl.textContent='⚽ En cours';
       cdEl.className='match-countdown live';
+    } else if(lockDiff<=0){
+      // Match pas encore commencé mais verrouillé — re-render si les inputs sont encore affichés
+      const card=cdEl.closest('.match-card');
+      if(card && card.querySelector('.score-inp')) needsRerender=true;
+      cdEl.textContent='🔒 Clôturé';
+      cdEl.className='match-countdown soon';
     } else {
-      const f=formatCountdown(diff);
+      const f=formatCountdown(lockDiff); // countdown vers le verrouillage
       cdEl.textContent=f.txt;
       cdEl.className='match-countdown '+f.cls;
     }
   });
+  if(needsRerender) renderMatches();
 }
 
 // ══════════════════════════════════════════
