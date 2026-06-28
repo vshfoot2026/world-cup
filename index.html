@@ -1383,14 +1383,21 @@ nav {
 
       <div class="admin-tabs">
         <button class="admin-tab active" onclick="showAdminTab('at-results',this)">📋 Saisir les résultats</button>
+        <button class="admin-tab" onclick="showAdminTab('at-knockout',this)">🏆 Phases finales</button>
         <button class="admin-tab" onclick="showAdminTab('at-players',this)">👥 Gérer les joueurs</button>
         <button class="admin-tab" onclick="showAdminTab('at-export',this)">📊 Export</button>
       </div>
 
-      <!-- Résultats -->
+      <!-- Résultats groupes -->
       <div id="at-results" class="tab-content active">
         <div class="phase-filter" id="phase-filter-admin"></div>
         <div id="admin-matches"></div>
+      </div>
+
+      <!-- Phases finales -->
+      <div id="at-knockout" class="tab-content">
+        <div class="phase-filter" id="phase-filter-knockout"></div>
+        <div id="admin-knockout-matches"></div>
       </div>
 
       <!-- Joueurs -->
@@ -1564,22 +1571,22 @@ const MATCHES = [
   { id:'L5',  g:'L', ph:'Groupe', d:'28/06 · 00h00', h:'Panama',          a:'Angleterre',        fh:'pa', fa:'gb-eng', v:'New York/New Jersey' },
   { id:'L6',  g:'L', ph:'Groupe', d:'28/06 · 00h00', h:'Croatie',         a:'Ghana',             fh:'hr', fa:'gh', v:'Philadelphie' },
   // ── 16es de finale (28 juin – 3 juillet) ──
-  { id:'R32_1',  g:'', ph:'32es', d:'28/06 · 21h00', h:'Afrique du Sud',      a:'Canada',             fh:'za', fa:'ca', v:'Los Angeles' },
-  { id:'R32_2',  g:'', ph:'32es', d:'29/06 · 19h00', h:'Brésil',              a:'Japon',              fh:'br', fa:'jp', v:'Houston' },
-  { id:'R32_3',  g:'', ph:'32es', d:'29/06 · 22h30', h:'Allemagne',           a:'Paraguay',           fh:'de', fa:'py', v:'Boston' },
-  { id:'R32_4',  g:'', ph:'32es', d:'30/06 · 03h00', h:'Pays-Bas',            a:'Maroc',              fh:'nl', fa:'ma', v:'Monterrey' },
-  { id:'R32_5',  g:'', ph:'32es', d:'30/06 · 19h00', h:"Côte d'Ivoire",       a:'Norvège',            fh:'ci', fa:'no', v:'Dallas' },
-  { id:'R32_6',  g:'', ph:'32es', d:'30/06 · 23h00', h:'France',              a:'Suède',              fh:'fr', fa:'se', v:'New York/NJ' },
-  { id:'R32_7',  g:'', ph:'32es', d:'01/07 · 03h00', h:'Mexique',             a:'Équateur',           fh:'mx', fa:'ec', v:'Mexico City' },
-  { id:'R32_8',  g:'', ph:'32es', d:'01/07 · 18h00', h:'Angleterre',          a:'RD Congo',           fh:'gb-eng', fa:'cd', v:'Atlanta' },
-  { id:'R32_9',  g:'', ph:'32es', d:'01/07 · 22h00', h:'Belgique',            a:'Sénégal',            fh:'be', fa:'sn', v:'Seattle' },
-  { id:'R32_10', g:'', ph:'32es', d:'02/07 · 02h00', h:'États-Unis',          a:'Bosnie-Herzégovine', fh:'us', fa:'ba', v:'San Francisco' },
-  { id:'R32_11', g:'', ph:'32es', d:'02/07 · 21h00', h:'Espagne',             a:'Autriche',           fh:'es', fa:'at', v:'Los Angeles' },
-  { id:'R32_12', g:'', ph:'32es', d:'03/07 · 01h00', h:'Portugal',            a:'Croatie',            fh:'pt', fa:'hr', v:'Toronto' },
-  { id:'R32_13', g:'', ph:'32es', d:'03/07 · 05h00', h:'Suisse',              a:'Algérie',            fh:'ch', fa:'dz', v:'Vancouver' },
-  { id:'R32_14', g:'', ph:'32es', d:'03/07 · 20h00', h:'Australie',           a:'Égypte',             fh:'au', fa:'eg', v:'Dallas' },
-  { id:'R32_15', g:'', ph:'32es', d:'04/07 · 00h00', h:'Argentine',           a:'Cap-Vert',           fh:'ar', fa:'cv', v:'Miami' },
-  { id:'R32_16', g:'', ph:'32es', d:'04/07 · 03h30', h:'Colombie',            a:'Ghana',              fh:'co', fa:'gh', v:'Kansas City' },
+  { id:'R32_1',  g:'', ph:'16es', d:'28/06 · 21h00', h:'Afrique du Sud',      a:'Canada',             fh:'za',     fa:'ca', v:'Los Angeles' },
+  { id:'R32_2',  g:'', ph:'16es', d:'29/06 · 19h00', h:'Brésil',              a:'Japon',              fh:'br',     fa:'jp', v:'Houston' },
+  { id:'R32_3',  g:'', ph:'16es', d:'29/06 · 22h30', h:'Allemagne',           a:'Paraguay',           fh:'de',     fa:'py', v:'Boston' },
+  { id:'R32_4',  g:'', ph:'16es', d:'30/06 · 03h00', h:'Pays-Bas',            a:'Maroc',              fh:'nl',     fa:'ma', v:'Monterrey' },
+  { id:'R32_5',  g:'', ph:'16es', d:'30/06 · 19h00', h:"Côte d'Ivoire",       a:'Norvège',            fh:'ci',     fa:'no', v:'Dallas' },
+  { id:'R32_6',  g:'', ph:'16es', d:'30/06 · 23h00', h:'France',              a:'Suède',              fh:'fr',     fa:'se', v:'New York/NJ' },
+  { id:'R32_7',  g:'', ph:'16es', d:'01/07 · 03h00', h:'Mexique',             a:'Équateur',           fh:'mx',     fa:'ec', v:'Mexico City' },
+  { id:'R32_8',  g:'', ph:'16es', d:'01/07 · 18h00', h:'Angleterre',          a:'RD Congo',           fh:'gb-eng', fa:'cd', v:'Atlanta' },
+  { id:'R32_9',  g:'', ph:'16es', d:'01/07 · 22h00', h:'Belgique',            a:'Sénégal',            fh:'be',     fa:'sn', v:'Seattle' },
+  { id:'R32_10', g:'', ph:'16es', d:'02/07 · 02h00', h:'États-Unis',          a:'Bosnie-Herzégovine', fh:'us',     fa:'ba', v:'San Francisco' },
+  { id:'R32_11', g:'', ph:'16es', d:'02/07 · 21h00', h:'Espagne',             a:'Autriche',           fh:'es',     fa:'at', v:'Los Angeles' },
+  { id:'R32_12', g:'', ph:'16es', d:'03/07 · 01h00', h:'Portugal',            a:'Croatie',            fh:'pt',     fa:'hr', v:'Toronto' },
+  { id:'R32_13', g:'', ph:'16es', d:'03/07 · 05h00', h:'Suisse',              a:'Algérie',            fh:'ch',     fa:'dz', v:'Vancouver' },
+  { id:'R32_14', g:'', ph:'16es', d:'03/07 · 20h00', h:'Australie',           a:'Égypte',             fh:'au',     fa:'eg', v:'Dallas' },
+  { id:'R32_15', g:'', ph:'16es', d:'04/07 · 00h00', h:'Argentine',           a:'Cap-Vert',           fh:'ar',     fa:'cv', v:'Miami' },
+  { id:'R32_16', g:'', ph:'16es', d:'04/07 · 03h30', h:'Colombie',            a:'Ghana',              fh:'co',     fa:'gh', v:'Kansas City' },
   // ── 8es de finale (4–7 juillet) ──
   { id:'R16_1', g:'', ph:'8es', d:'04/07 · 19h00', h:'Vainqueur 16e-1', a:'Vainqueur 16e-2', fh:'_flag_ko', fa:'_flag_ko', v:'Houston' },
   { id:'R16_2', g:'', ph:'8es', d:'04/07 · 23h00', h:'Vainqueur 16e-3', a:'Vainqueur 16e-4', fh:'_flag_ko', fa:'_flag_ko', v:'Philadelphie' },
@@ -1592,8 +1599,8 @@ const MATCHES = [
   // ── Quarts (9–11 juillet) ──
   { id:'QF1', g:'', ph:'Quarts', d:'09/07 · 22h00', h:'Vainqueur 8e-1', a:'Vainqueur 8e-2', fh:'_flag_ko', fa:'_flag_ko', v:'Boston' },
   { id:'QF2', g:'', ph:'Quarts', d:'10/07 · 21h00', h:'Vainqueur 8e-3', a:'Vainqueur 8e-4', fh:'_flag_ko', fa:'_flag_ko', v:'Los Angeles' },
-  { id:'QF3', g:'', ph:'Quarts', d:'10/07 · 23h00', h:'Vainqueur 8e-5', a:'Vainqueur 8e-6', fh:'_flag_ko', fa:'_flag_ko', v:'Miami' },
-  { id:'QF4', g:'', ph:'Quarts', d:'11/07 · 03h00', h:'Vainqueur 8e-7', a:'Vainqueur 8e-8', fh:'_flag_ko', fa:'_flag_ko', v:'Kansas City' },
+  { id:'QF3', g:'', ph:'Quarts', d:'11/07 · 23h00', h:'Vainqueur 8e-5', a:'Vainqueur 8e-6', fh:'_flag_ko', fa:'_flag_ko', v:'Miami' },
+  { id:'QF4', g:'', ph:'Quarts', d:'12/07 · 03h00', h:'Vainqueur 8e-7', a:'Vainqueur 8e-8', fh:'_flag_ko', fa:'_flag_ko', v:'Kansas City' },
   // ── Demis (14–15 juillet) ──
   { id:'SF1', g:'', ph:'Demis', d:'14/07 · 21h00', h:'Vainqueur QF1', a:'Vainqueur QF2', fh:'_flag_ko', fa:'_flag_ko', v:'Dallas' },
   { id:'SF2', g:'', ph:'Demis', d:'15/07 · 21h00', h:'Vainqueur QF3', a:'Vainqueur QF4', fh:'_flag_ko', fa:'_flag_ko', v:'Atlanta' },
@@ -1602,7 +1609,7 @@ const MATCHES = [
   { id:'FIN', g:'', ph:'Finale', d:'19/07 · 21h00', h:'Vainqueur SF1', a:'Vainqueur SF2', fh:'_flag_ko', fa:'_flag_ko', v:'New York/New Jersey' },
 ];
 
-const PHASES = ['Groupe','32es','8es','Quarts','Demis','Finale'];
+const PHASES = ['Groupe','16es','8es','Quarts','Demis','Finale'];
 
 // ══════════════════════════════════════════
 //  CONFIG GAS + PROXY CLOUDFLARE
@@ -1743,9 +1750,11 @@ function initUI(){
   el('user-avatar').textContent=(CU.prenom[0]||'?').toUpperCase()+(CU.nom[0]||'').toUpperCase();
   buildPhaseFilter('phase-filter-pronos',p=>{pronPhase=p;renderMatches();});
   buildPhaseFilter('phase-filter-admin',p=>{adminPhase=p;renderAdminMatches();});
+  buildKnockoutFilter();
   renderMatches();
   renderLeaderboard();
   renderAdminMatches();
+  renderAdminKnockout();
   renderPlayersList();
   updateStats();
 }
@@ -1771,7 +1780,7 @@ function showPage(page, btn){
   el('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
   if(page==='classement') renderLeaderboard();
-  if(page==='admin'){ renderAdminMatches(); renderPlayersList(); }
+  if(page==='admin'){ renderAdminMatches(); renderAdminKnockout(); renderPlayersList(); }
 }
 
 function showAdminTab(tabId, btn){
@@ -2108,6 +2117,56 @@ function renderAdminMatches(){
   c.appendChild(card);
 }
 
+let knockoutPhase = '16es';
+
+function buildKnockoutFilter(){
+  const c = el('phase-filter-knockout');
+  if(!c) return;
+  c.innerHTML = '';
+  const kPhases = ['16es','8es','Quarts','Demis','Finale'];
+  kPhases.forEach((p,i) => {
+    const b = document.createElement('button');
+    b.className = 'phase-btn' + (i===0?' active':'');
+    b.textContent = p;
+    b.onclick = () => {
+      c.querySelectorAll('.phase-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      knockoutPhase = p;
+      renderAdminKnockout();
+    };
+    c.appendChild(b);
+  });
+}
+
+function renderAdminKnockout(){
+  const c = el('admin-knockout-matches');
+  if(!c) return;
+  const results = getResults();
+  const list = MATCHES.filter(m => m.ph === knockoutPhase);
+  c.innerHTML = '';
+  const card = document.createElement('div');
+  card.className = 'admin-card';
+  card.innerHTML = `<div class="admin-card-title">🏆 ${knockoutPhase}</div>`;
+  list.forEach(m => {
+    const res = results[m.id];
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    row.innerHTML = `
+      <div class="result-match-name">
+        ${flagImg(m.fh)} ${m.h} vs ${m.a} ${flagImg(m.fa)}
+        <small>${m.d} · ${m.v}</small>
+      </div>
+      <div class="result-inputs">
+        <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.h:''}" id="rh_${m.id}">
+        <span style="color:var(--white30);font-size:14px;font-weight:700;">—</span>
+        <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.a:''}" id="ra_${m.id}">
+        <button class="btn-validate" onclick="saveResult('${m.id}')">${res?'✏️ Modifier':'✅ Valider'}</button>
+      </div>`;
+    card.appendChild(row);
+  });
+  c.appendChild(card);
+}
+
 async function saveResult(mid){
   const h=parseInt(el('rh_'+mid)?.value);
   const a=parseInt(el('ra_'+mid)?.value);
@@ -2117,6 +2176,7 @@ async function saveResult(mid){
   r[mid]={h,a};
   setResults(r);
   renderAdminMatches();
+  renderAdminKnockout();
   renderLeaderboard();
   toast(`⏳ Enregistrement…`);
   // GAS async
