@@ -1394,10 +1394,17 @@ nav {
         <div id="admin-matches"></div>
       </div>
 
-      <!-- Phases finales -->
+      <!-- Phases finales : définir les équipes -->
       <div id="at-knockout" class="tab-content">
-        <div class="phase-filter" id="phase-filter-knockout"></div>
-        <div id="admin-knockout-matches"></div>
+        <div class="admin-card">
+          <div class="admin-card-title">🏆 Définir les équipes des phases finales</div>
+          <p style="color:var(--white30);font-size:14px;margin-bottom:20px;line-height:1.6;">
+            Au fur et à mesure que les qualifications se précisent, sélectionne les équipes pour chaque match.
+            Les pronostiqueurs verront alors les vraies équipes (nom + drapeau) à la place des placeholders.
+          </p>
+          <div class="phase-filter" id="phase-filter-knockout"></div>
+          <div id="knockout-matches"></div>
+        </div>
       </div>
 
       <!-- Joueurs -->
@@ -1611,6 +1618,10 @@ const MATCHES = [
 
 const PHASES = ['Groupe','16es','8es','Quarts','Demis','Finale'];
 
+// ── Équipes pour les phases finales (mêmes noms/drapeaux que les groupes) ──
+const TEAMS = [{n:'Afrique du Sud',f:'za'},{n:'Algérie',f:'dz'},{n:'Allemagne',f:'de'},{n:'Angleterre',f:'gb-eng'},{n:'Arabie Saoudite',f:'sa'},{n:'Argentine',f:'ar'},{n:'Australie',f:'au'},{n:'Autriche',f:'at'},{n:'Belgique',f:'be'},{n:'Bosnie-Herzégovine',f:'ba'},{n:'Brésil',f:'br'},{n:'Canada',f:'ca'},{n:'Cap-Vert',f:'cv'},{n:'Colombie',f:'co'},{n:'Corée du Sud',f:'kr'},{n:'Croatie',f:'hr'},{n:'Curaçao',f:'cw'},{n:"Côte d'Ivoire",f:'ci'},{n:'Espagne',f:'es'},{n:'France',f:'fr'},{n:'Ghana',f:'gh'},{n:'Haïti',f:'ht'},{n:'Irak',f:'iq'},{n:'Iran',f:'ir'},{n:'Japon',f:'jp'},{n:'Jordanie',f:'jo'},{n:'Maroc',f:'ma'},{n:'Mexique',f:'mx'},{n:'Norvège',f:'no'},{n:'Nouvelle-Zélande',f:'nz'},{n:'Ouzbékistan',f:'uz'},{n:'Panama',f:'pa'},{n:'Paraguay',f:'py'},{n:'Pays-Bas',f:'nl'},{n:'Portugal',f:'pt'},{n:'Qatar',f:'qa'},{n:'RD Congo',f:'cd'},{n:'Rép. Tchèque',f:'cz'},{n:'Suisse',f:'ch'},{n:'Suède',f:'se'},{n:'Sénégal',f:'sn'},{n:'Tunisie',f:'tn'},{n:'Turquie',f:'tr'},{n:'Uruguay',f:'uy'},{n:'Écosse',f:'gb-sct'},{n:'Égypte',f:'eg'},{n:'Équateur',f:'ec'},{n:'États-Unis',f:'us'}];
+const TEAM_FLAG = Object.fromEntries(TEAMS.map(t=>[t.n,t.f]));
+
 // ══════════════════════════════════════════
 //  CONFIG GAS + PROXY CLOUDFLARE
 // ══════════════════════════════════════════
@@ -1628,6 +1639,8 @@ const getPronos   = ()=>S.get('vsh_pronos',{});
 const setPronos   = p=>S.set('vsh_pronos',p);
 const getResults  = ()=>S.get('vsh_results',{});
 const setResults  = r=>S.set('vsh_results',r);
+const getKnockout = ()=>S.get('vsh_knockout',{});
+const setKnockout = k=>S.set('vsh_knockout',k);
 
 // ── Appel GAS via proxy Cloudflare ──
 async function gasGet(action){
@@ -1648,14 +1661,16 @@ async function gasPost(payload){
 // ── Chargement initial depuis GAS (avec fallback cache local) ──
 async function loadAllFromGAS(){
   try {
-    const [pRes, prRes, rRes] = await Promise.all([
+    const [pRes, prRes, rRes, kRes] = await Promise.all([
       gasGet('getPlayers'),
       gasGet('getPronos'),
       gasGet('getResults'),
+      gasGet('getKnockout'),
     ]);
     if(pRes.players)  setPlayers(pRes.players);
     if(prRes.pronos)  setPronos(prRes.pronos);
     if(rRes.results)  setResults(rRes.results);
+    if(kRes.knockout) setKnockout(kRes.knockout);
   } catch(e){
     console.warn('GAS non disponible, utilisation du cache local:', e);
   }
@@ -1664,12 +1679,14 @@ async function loadAllFromGAS(){
 // ── Rafraîchissement silencieux toutes les 60s ──
 async function refreshData(){
   try {
-    const [prRes, rRes] = await Promise.all([
+    const [prRes, rRes, kRes] = await Promise.all([
       gasGet('getPronos'),
       gasGet('getResults'),
+      gasGet('getKnockout'),
     ]);
     if(prRes.pronos)  setPronos(prRes.pronos);
     if(rRes.results)  setResults(rRes.results);
+    if(kRes.knockout) setKnockout(kRes.knockout);
     renderMatches(); renderLeaderboard(); updateStats();
   } catch(e){ /* silencieux */ }
 }
@@ -1832,6 +1849,19 @@ function flagImg(code){
                onerror="this.style.display='none'">`;
 }
 
+// ── Résout un match knockout : remplace les placeholders par les vraies équipes ──
+function resolveMatch(m){
+  const ko = getKnockout()[m.id];
+  if(!ko) return m;
+  return {
+    ...m,
+    h:  ko.h  || m.h,
+    a:  ko.a  || m.a,
+    fh: ko.fh || m.fh,
+    fa: ko.fa || m.fa
+  };
+}
+
 // Parse "13/06 · 03h00" -> Date Paris CEST (UTC+2, year 2026)
 function matchKickoff(m){
   const match = m.d.match(/(\d{2})\/(\d{2})\s*·\s*(\d{2})h(\d{2})/);
@@ -1853,6 +1883,7 @@ function matchStarted(m){
 }
 
 function makeCard(m,myPronos,results){
+  m=resolveMatch(m);
   const card=document.createElement('div');
   card.className='match-card';
   const prono=myPronos[m.id];
@@ -2102,10 +2133,11 @@ function renderAdminMatches(){
       card.appendChild(gl);
     }
     const res=results[m.id];
+    const rm=resolveMatch(m);
     const row=document.createElement('div');
     row.className='result-row';
     row.innerHTML=`
-      <div class="result-match-name">${flagImg(m.fh)} ${m.h} vs ${m.a} ${flagImg(m.fa)}<small>${m.d} · ${m.v}</small></div>
+      <div class="result-match-name">${flagImg(rm.fh)} ${rm.h} vs ${rm.a} ${flagImg(rm.fa)}<small>${rm.d} · ${rm.v}</small></div>
       <div class="result-inputs">
         <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.h:''}" id="rh_${m.id}">
         <span style="color:var(--white30);font-size:14px;font-weight:700;">—</span>
@@ -2138,33 +2170,76 @@ function buildKnockoutFilter(){
   });
 }
 
+// Construit les <option> d'un menu déroulant d'équipes, avec la valeur courante sélectionnée
+function teamOptions(selected){
+  let opts = `<option value="">— à définir —</option>`;
+  TEAMS.forEach(t=>{
+    const sel = (t.n===selected) ? ' selected' : '';
+    opts += `<option value="${t.n}"${sel}>${t.n}</option>`;
+  });
+  return opts;
+}
+
 function renderAdminKnockout(){
-  const c = el('admin-knockout-matches');
+  const c = el('knockout-matches');
   if(!c) return;
-  const results = getResults();
+  const ko = getKnockout();
   const list = MATCHES.filter(m => m.ph === knockoutPhase);
   c.innerHTML = '';
-  const card = document.createElement('div');
-  card.className = 'admin-card';
-  card.innerHTML = `<div class="admin-card-title">🏆 ${knockoutPhase}</div>`;
   list.forEach(m => {
-    const res = results[m.id];
+    const cur = ko[m.id] || {};
+    const hSel = cur.h || '';
+    const aSel = cur.a || '';
     const row = document.createElement('div');
     row.className = 'result-row';
+    row.style.cssText = 'flex-direction:column;align-items:stretch;gap:10px;';
     row.innerHTML = `
-      <div class="result-match-name">
-        ${flagImg(m.fh)} ${m.h} vs ${m.a} ${flagImg(m.fa)}
-        <small>${m.d} · ${m.v}</small>
+      <div style="font-size:12px;color:var(--white30);font-weight:600;letter-spacing:0.5px;">
+        ${m.d} · ${m.v} <span style="color:var(--white50);">(${m.h} vs ${m.a})</span>
       </div>
-      <div class="result-inputs">
-        <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.h:''}" id="rh_${m.id}">
-        <span style="color:var(--white30);font-size:14px;font-weight:700;">—</span>
-        <input class="res-inp" type="number" min="0" max="30" placeholder="0" value="${res?res.a:''}" id="ra_${m.id}">
-        <button class="btn-validate" onclick="saveResult('${m.id}')">${res?'✏️ Modifier':'✅ Valider'}</button>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span id="kflagh_${m.id}" style="width:34px;text-align:center;">${flagImg(TEAM_FLAG[hSel]||'_flag_ko')}</span>
+        <select class="add-input" style="flex:1;min-width:150px;" id="kh_${m.id}"
+                onchange="onKnockoutSelect('${m.id}')">${teamOptions(hSel)}</select>
+        <span style="color:var(--white30);font-weight:700;">vs</span>
+        <select class="add-input" style="flex:1;min-width:150px;" id="ka_${m.id}"
+                onchange="onKnockoutSelect('${m.id}')">${teamOptions(aSel)}</select>
+        <span id="kflaga_${m.id}" style="width:34px;text-align:center;">${flagImg(TEAM_FLAG[aSel]||'_flag_ko')}</span>
+        <button class="btn-validate" onclick="saveKnockoutMatch('${m.id}')">💾 Enregistrer</button>
       </div>`;
-    card.appendChild(row);
+    c.appendChild(row);
   });
-  c.appendChild(card);
+}
+
+// Met à jour les drapeaux en direct quand on change une sélection
+function onKnockoutSelect(mid){
+  const hName = el('kh_'+mid).value;
+  const aName = el('ka_'+mid).value;
+  el('kflagh_'+mid).innerHTML = flagImg(TEAM_FLAG[hName]||'_flag_ko');
+  el('kflaga_'+mid).innerHTML = flagImg(TEAM_FLAG[aName]||'_flag_ko');
+}
+
+async function saveKnockoutMatch(mid){
+  const hName = el('kh_'+mid).value;
+  const aName = el('ka_'+mid).value;
+  const ko = getKnockout();
+  ko[mid] = {
+    h:  hName,
+    a:  aName,
+    fh: hName ? (TEAM_FLAG[hName]||'') : '',
+    fa: aName ? (TEAM_FLAG[aName]||'') : ''
+  };
+  setKnockout(ko);
+  // Propagation immédiate dans tout le site
+  renderMatches();
+  renderAdminMatches();
+  toast('⏳ Enregistrement…');
+  try {
+    await gasPost({action:'saveKnockout', knockout:ko});
+    toast(`✅ Équipes enregistrées : ${hName||'?'} vs ${aName||'?'}`);
+  } catch(e){
+    toast('✅ Enregistré localement (sync GAS en attente)');
+  }
 }
 
 async function saveResult(mid){
@@ -2176,7 +2251,6 @@ async function saveResult(mid){
   r[mid]={h,a};
   setResults(r);
   renderAdminMatches();
-  renderAdminKnockout();
   renderLeaderboard();
   toast(`⏳ Enregistrement…`);
   // GAS async
