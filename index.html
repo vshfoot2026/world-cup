@@ -1876,10 +1876,11 @@ function matchKickoff(m){
   return d;
 }
 
+const LOCK_BEFORE_MS = 60 * 1000; // 1 min avant le coup d'envoi
 function matchStarted(m){
   const ko = matchKickoff(m);
   if(!ko) return false;
-  return Date.now() >= ko.getTime();
+  return Date.now() >= ko.getTime() - LOCK_BEFORE_MS;
 }
 
 function makeCard(m,myPronos,results){
@@ -1957,8 +1958,16 @@ async function saveP(mid){
   toast(`⏳ Enregistrement…`);
   // Envoi GAS async
   try {
-    await gasPost({action:'saveProno', code:CU.code, prenom:CU.prenom, nom:CU.nom,
+    const res = await gasPost({action:'saveProno', code:CU.code, prenom:CU.prenom, nom:CU.nom,
                    matchId:mid, scoreH:h, scoreA:a});
+    if (res && res.locked) {
+      // Refus serveur : annuler le prono local et resynchroniser
+      const fresh = await gasGet('getPronos');
+      if (fresh.pronos) setPronos(fresh.pronos);
+      renderMatches();
+      toast('🔒 Refusé — le match a déjà commencé');
+      return;
+    }
     toast(`✅ Prono enregistré : ${m?.h} ${h}–${a} ${m?.a}`);
   } catch(e){
     toast(`✅ Prono sauvegardé localement (sync GAS en attente)`);
